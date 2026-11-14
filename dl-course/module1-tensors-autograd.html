@@ -831,8 +831,8 @@ y = layer(torch.randn(32, 10))  # (32, 4)</code></pre>
   </div>
   <div class="block"><h3><span class="n">6</span> Интерактив</h3>
     <div class="widget">
-      <p class="widget-title">Линейная vs ReLU-сеть на «двух лунах»</p>
-      <p class="widget-hint">(1) Выключите ReLU — граница почти прямая, accuracy низкая; (2) включите — граница изгибается; (3) подвигайте lr/шаги.</p>
+      <p class="widget-title">Линейная vs ReLU-сеть на XOR-блобах</p>
+      <p class="widget-hint">(1) Выключите ReLU — accuracy ~50–60% (линейно); (2) включите — сеть разделяет XOR; (3) увеличьте шаги.</p>
       <div class="widget-controls">
         <label><input type="checkbox" id="nl-relu" checked> ReLU</label>
         <label>шагов обучения <input type="range" id="nl-steps" min="20" max="400" value="120"><span id="nl-steps-v"></span></label>
@@ -1488,58 +1488,58 @@ function widgetGD1D(){
 
 function widgetNonlin(){
   const c=document.getElementById("nlCanvas"); if(!c)return; const ctx=c.getContext("2d");
-  // two moons synthetic
+  // XOR-like blobs — not linearly separable
   const data=[];
-  for(let i=0;i<80;i++){
-    const t=Math.PI*i/79; data.push({x:Math.cos(t)+0.05*(Math.random()-0.5), y:Math.sin(t)+0.05*(Math.random()-0.5), ycls:0});
-    data.push({x:1-Math.cos(t)+0.05*(Math.random()-0.5), y:0.5-Math.sin(t)+0.05*(Math.random()-0.5), ycls:1});
-  }
+  function blob(cx,cy,cls,n){ for(let i=0;i<n;i++) data.push({x:cx+0.28*(Math.random()-0.5), y:cy+0.28*(Math.random()-0.5), ycls:cls}); }
+  blob(-0.75,-0.75,0,45); blob(0.75,0.75,0,45); blob(-0.75,0.75,1,45); blob(0.75,-0.75,1,45);
   let W1,b1,W2,b2;
-  function init(){ W1=[[1.2,-0.8],[0.5,1.1],[-0.7,0.9],[0.3,-1.0],[1.0,0.4],[-0.4,-0.6],[0.8,0.7],[-1.1,0.2]]; b1=W1.map(()=>0.1*(Math.random()-0.5));
-    W2=W1.map(()=>0.3*(Math.random()-0.5)); b2=0; }
+  function init(){
+    W1=[]; for(let i=0;i<24;i++) W1.push([3*(Math.random()-0.5),3*(Math.random()-0.5)]);
+    b1=W1.map(()=>0.2*(Math.random()-0.5));
+    W2=W1.map(()=>0.4*(Math.random()-0.5)); b2=0;
+  }
   function relu(v){return Math.max(0,v);}
   function forward(x,y,useRelu){
     const h=W1.map((w,i)=>{ const z=w[0]*x+w[1]*y+b1[i]; return useRelu?relu(z):z; });
     let o=b2; h.forEach((hi,i)=>o+=W2[i]*hi); return {o,h};
   }
+  function toPix(x,y){ return {X:(x+1.4)/2.8*c.width, Y:(1.4-y)/2.8*c.height}; }
   function train(){
     const useRelu=document.getElementById("nl-relu").checked;
     const steps=+document.getElementById("nl-steps").value;
     document.getElementById("nl-steps-v").textContent=steps;
-    init(); const lr=0.15;
+    init(); const lr=0.25;
     for(let s=0;s<steps;s++){
       const p=data[(Math.random()*data.length)|0];
       const {o,h}=forward(p.x,p.y,useRelu);
-      const pred=1/(1+Math.exp(-o));
+      const pred=1/(1+Math.exp(-Math.max(-20,Math.min(20,o))));
       const dL=pred-p.ycls;
-      // backprop tiny
-      const dW2=h.map(hi=>dL*hi); const db2=dL;
       const dH=W2.map(w=>dL*w);
       W1.forEach((w,i)=>{
         const gate=(!useRelu||h[i]>0)?1:0;
         const g=dH[i]*gate;
         w[0]-=lr*g*p.x; w[1]-=lr*g*p.y; b1[i]-=lr*g;
       });
-      W2.forEach((_,i)=>W2[i]-=lr*dW2[i]); b2-=lr*db2;
+      W2.forEach((_,i)=>W2[i]-=lr*dL*h[i]); b2-=lr*dL;
     }
-    // draw
     ctx.clearRect(0,0,c.width,c.height);
     for(let ix=0;ix<c.width;ix+=4) for(let iy=0;iy<c.height;iy+=4){
-      const x=ix/c.width*3-0.75, y=1.2-iy/c.height*2.2;
-      const {o}=forward(x,y,useRelu); const p=1/(1+Math.exp(-o));
-      ctx.fillStyle=p>0.5?"rgba(124,58,237,0.12)":"rgba(110,110,115,0.12)";
+      const x=ix/c.width*2.8-1.4, y=1.4-iy/c.height*2.8;
+      const {o}=forward(x,y,useRelu); const pr=1/(1+Math.exp(-Math.max(-20,Math.min(20,o))));
+      ctx.fillStyle=pr>0.5?"rgba(124,58,237,0.14)":"rgba(110,110,115,0.14)";
       ctx.fillRect(ix,iy,4,4);
     }
     data.forEach(p=>{
-      const X=(p.x+0.75)/3*c.width, Y=(1.2-p.y)/2.2*c.height;
+      const {X,Y}=toPix(p.x,p.y);
       ctx.fillStyle=p.ycls?"#7c3aed":"#6e6e73";
-      ctx.beginPath(); ctx.arc(X,Y,3,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(X,Y,3.5,0,7); ctx.fill();
     });
-    let ok=0; data.forEach(p=>{ const pr=1/(1+Math.exp(-forward(p.x,p.y,useRelu).o)); if((pr>0.5?1:0)===p.ycls)ok++; });
-    document.getElementById("nlReadout").textContent="accuracy ≈ "+(100*ok/data.length).toFixed(1)+"%  ("+(useRelu?"с ReLU":"без ReLU — почти линейно")+")";
+    let ok=0; data.forEach(p=>{ const pr=1/(1+Math.exp(-Math.max(-20,Math.min(20,forward(p.x,p.y,useRelu).o)))); if((pr>0.5?1:0)===p.ycls)ok++; });
+    document.getElementById("nlReadout").textContent="accuracy ≈ "+(100*ok/data.length).toFixed(1)+"%  ("+(useRelu?"с ReLU":"без ReLU = одна гиперплоскость")+")";
   }
   document.getElementById("nl-train").onclick=train;
   document.getElementById("nl-steps").oninput=()=>document.getElementById("nl-steps-v").textContent=document.getElementById("nl-steps").value;
+  const stepsEl=document.getElementById("nl-steps"); if(stepsEl){ stepsEl.value=400; stepsEl.max=1000; }
   train();
 }
 
