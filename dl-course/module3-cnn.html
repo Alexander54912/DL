@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Модуль 3 · Свёрточные сети</title>
+<link rel="icon" href="data:,">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root {
+  --bg: #fbfbfd;
+  --bg-card: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0071e3;
+  --accent-soft: #e8f2fc;
+  --data: #6e6e73;
+  --weights: #0071e3;
+  --pred: #7c3aed;
+  --loss: #e11d48;
+  --grad: #ea580c;
+  --ok: #16a34a;
+  --radius: 18px;
+  --sidebar-w: 280px;
+  --font: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif;
+  --mono: "SF Mono", Menlo, ui-monospace, monospace;
+  --max-prose: 42rem;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; font-family: var(--font); color: var(--text);
+  background: var(--bg); line-height: 1.55; font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+pre {
+  font-family: var(--mono); background: #f5f5f7; border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.45;
+}
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--bg-card); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 20px 16px 40px; z-index: 40;
+}
+.sidebar h1 { font-size: 15px; margin: 0 0 4px; font-weight: 650; }
+.sidebar .course-pos { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+.progress-wrap { margin-bottom: 16px; }
+.progress-bar {
+  height: 6px; background: #e8e8ed; border-radius: 999px; overflow: hidden;
+}
+.progress-bar > span {
+  display: block; height: 100%; width: 0%; background: var(--accent);
+  transition: width .25s ease;
+}
+.progress-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc a {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 8px; border-radius: 10px; color: var(--text);
+  font-size: 13px; line-height: 1.35; text-decoration: none;
+}
+.toc a:hover { background: #f5f5f7; text-decoration: none; }
+.toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 560; }
+.toc .dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: transparent;
+}
+.toc a.done .dot { background: var(--ok); border-color: var(--ok); }
+.main {
+  margin-left: var(--sidebar-w); flex: 1; padding: 28px 32px 80px;
+  max-width: calc(var(--max-prose) + 280px);
+}
+.topbar-mobile {
+  display: none; position: sticky; top: 0; z-index: 50;
+  background: rgba(251,251,253,.92); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border); padding: 12px 16px;
+  align-items: center; justify-content: space-between;
+}
+.btn {
+  appearance: none; border: 1px solid var(--border); background: #fff;
+  color: var(--text); border-radius: 980px; padding: 8px 16px;
+  font: inherit; font-size: 14px; font-weight: 520; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn:hover { background: #f5f5f7; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #0077ed; }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.hero {
+  margin-bottom: 28px; padding-bottom: 22px; border-bottom: 1px solid var(--border);
+}
+.hero h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.03em; margin: 0 0 10px; font-weight: 700; }
+.hero p { color: var(--text-secondary); margin: 0 0 8px; max-width: var(--max-prose); }
+.badge {
+  display: inline-flex; align-items: center; font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border);
+  color: var(--text-secondary); background: #fff; margin-right: 6px; margin-bottom: 4px;
+}
+.badge.lec { border-color: #bfd7ff; color: #0058b0; background: #eef5ff; }
+.badge.sem { border-color: #c7e8d1; color: #0f6b2f; background: #eefbf2; }
+.badge.extra { border-color: #e2d4ff; color: #5b21b6; background: #f6f0ff; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 14px 16px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin: 18px 0; font-size: 13px;
+}
+.legend span { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; }
+.map-card, .card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; margin: 16px 0;
+}
+.map-list { margin: 8px 0 0; padding-left: 18px; color: var(--text-secondary); font-size: 14px; }
+.map-list li { margin: 4px 0; }
+.topic {
+  margin: 36px 0 48px; padding-top: 8px; scroll-margin-top: 20px;
+}
+.topic > h2 {
+  font-size: 26px; letter-spacing: -0.02em; margin: 0 0 6px; font-weight: 700;
+}
+.topic-meta { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+.block { margin: 18px 0; }
+.block h3 {
+  font-size: 15px; font-weight: 650; margin: 0 0 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.block h3 .n {
+  display: inline-flex; width: 22px; height: 22px; border-radius: 7px;
+  background: var(--accent-soft); color: var(--accent); font-size: 12px;
+  align-items: center; justify-content: center; font-weight: 700;
+}
+.block p, .block li { max-width: var(--max-prose); }
+.block p { margin: 0 0 10px; }
+.muted { color: var(--text-secondary); }
+.formula-box {
+  background: #fff; border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 16px; margin: 10px 0; overflow-x: auto;
+}
+.dims {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;
+}
+.dim-pill {
+  font-family: var(--mono); font-size: 12px; padding: 5px 10px;
+  border-radius: 8px; border: 1px solid var(--border); background: #fff;
+}
+.dim-pill.data { border-color: #cfcfd4; color: var(--data); }
+.dim-pill.weights { border-color: #9ec5f0; color: var(--weights); background: #f0f7ff; }
+.dim-pill.pred { border-color: #d4c4f7; color: var(--pred); background: #f7f2ff; }
+.dim-pill.loss { border-color: #f5c2cd; color: var(--loss); background: #fff1f4; }
+.dim-pill.grad { border-color: #f5c9a8; color: var(--grad); background: #fff6ef; }
+.steps { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; }
+.step {
+  display: none; padding: 14px 16px; border-top: 1px solid var(--border);
+}
+.step:first-child, .step.show { display: block; border-top: none; }
+.step.show + .step { border-top: 1px solid var(--border); }
+.step .why { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.steps-nav { display: flex; gap: 8px; padding: 10px 12px; background: #fafafa; border-top: 1px solid var(--border); }
+.num-ex {
+  border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff;
+}
+.num-ex .inputs { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.num-ex label { font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+.num-ex input[type=number], .num-ex input[type=text], .code-editor {
+  border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+  font-family: var(--mono); font-size: 13px; background: #fff; color: var(--text);
+  min-width: 72px;
+}
+.num-ex .trace { font-family: var(--mono); font-size: 13px; background: #f5f5f7;
+  border-radius: 10px; padding: 10px 12px; margin-top: 8px; white-space: pre-wrap; }
+.widget {
+  border: 1px solid var(--border); border-radius: var(--radius); background: #fff;
+  padding: 14px; margin: 12px 0;
+}
+.widget-title { font-weight: 650; font-size: 14px; margin: 0 0 4px; }
+.widget-hint { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+.widget-controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-bottom: 10px; }
+.widget-controls label { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.widget canvas, .widget svg { display: block; width: 100%; max-width: 560px; height: auto; touch-action: none; border-radius: 12px; background: #fafafa; border: 1px solid #eee; }
+.widget .readout { font-family: var(--mono); font-size: 13px; margin-top: 10px; color: var(--text); }
+.pitfalls { border-left: 3px solid var(--loss); padding: 4px 0 4px 14px; }
+.pitfalls li { margin: 6px 0; }
+.life { border-left: 3px solid var(--ok); padding: 4px 0 4px 14px; }
+.quiz { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff; margin: 10px 0; }
+.quiz .q { font-weight: 560; margin-bottom: 10px; }
+.quiz .opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz .opt {
+  text-align: left; border: 1px solid var(--border); background: #fff;
+  border-radius: 12px; padding: 10px 12px; cursor: pointer; font: inherit; font-size: 14px;
+}
+.quiz .opt:hover { border-color: var(--accent); }
+.quiz .opt.correct { border-color: var(--ok); background: #ecfdf3; }
+.quiz .opt.wrong { border-color: var(--loss); background: #fff1f4; }
+.quiz .feedback { margin-top: 10px; font-size: 14px; display: none; }
+.quiz .feedback.show { display: block; }
+.quiz input[type=number], .quiz input[type=text] {
+  border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+  font-family: var(--mono); width: 120px;
+}
+.spoiler {
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: #fff; margin-top: 8px;
+}
+.spoiler summary { cursor: pointer; font-weight: 560; font-size: 14px; }
+.cheat {
+  background: #f5f5f7; border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; font-size: 14px; margin-top: 8px;
+}
+.cheat code { color: var(--weights); }
+.table-map {
+  width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0;
+}
+.table-map th, .table-map td {
+  border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top;
+}
+.table-map th { background: #f5f5f7; font-weight: 600; }
+.code-cell { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; margin: 12px 0; }
+.code-cell .toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border); background: #fafafa; align-items: center;
+}
+.code-cell textarea {
+  width: 100%; min-height: 140px; border: 0; resize: vertical; padding: 12px 14px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.45; background: #fff; color: var(--text);
+}
+.code-cell .out {
+  border-top: 1px solid var(--border); padding: 10px 14px; font-family: var(--mono);
+  font-size: 12px; white-space: pre-wrap; background: #fbfbfd; min-height: 28px; color: var(--text-secondary);
+}
+.code-cell .out.ok { color: var(--ok); }
+.code-cell .out.err { color: var(--loss); }
+.fillblank {
+  border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff; margin: 12px 0;
+}
+.fillblank .prompt { font-family: var(--mono); font-size: 13px; background: #f5f5f7; padding: 12px; border-radius: 10px; white-space: pre-wrap; margin-bottom: 10px; }
+.fillblank .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pytorch-block { position: relative; }
+.copy-btn { position: absolute; top: 10px; right: 10px; }
+.mark-done {
+  margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.final-score { font-size: 18px; font-weight: 650; margin: 12px 0; }
+details.more { margin: 10px 0; }
+details.more > summary { cursor: pointer; color: var(--accent); font-weight: 560; }
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-105%); transition: transform .2s ease; }
+  .sidebar.open { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,.08); }
+  .main { margin-left: 0; padding: 20px 16px 64px; max-width: 100%; }
+  .topbar-mobile { display: flex; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 35; }
+  .overlay.show { display: block; }
+}
+@media (max-width: 420px) {
+  body { font-size: 15px; }
+  .hero h1 { font-size: 26px; }
+  .widget canvas { max-width: 100%; }
+}
+
+.bp-node { font-family: var(--mono); font-size: 12px; }
+.opt-legend { display:flex; flex-wrap:wrap; gap:10px 14px; font-size:12px; margin:8px 0; }
+.opt-legend span { display:inline-flex; align-items:center; gap:6px; }
+.opt-sw { width:14px; height:3px; border-radius:2px; display:inline-block; }
+.course-nav { font-size:13px; color:var(--text-secondary); margin-bottom:10px; }
+
+.norm-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; font-size:12px; margin:10px 0; }
+.norm-grid div { border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff; }
+.curve-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; margin:8px 0; color:var(--text-secondary); }
+
+.kernel-grid { display:inline-grid; grid-template-columns:repeat(3,42px); gap:4px; }
+.kernel-grid input { width:42px; padding:6px 4px; text-align:center; font-family:var(--mono); font-size:12px; border:1px solid var(--border); border-radius:8px; }
+.arch-table { width:100%; border-collapse:collapse; font-size:13px; }
+.arch-table th,.arch-table td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+.arch-table th { background:#f5f5f7; }
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+<div class="topbar-mobile"><strong>Модуль 3 · CNN</strong>
+<button class="btn btn-sm" type="button" onclick="toggleNav()">Оглавление</button></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="course-pos">Курс DL · модуль 3 из 5</div>
+  <h1>Свёрточные сети</h1>
+  <div class="progress-wrap"><div class="progress-bar"><span id="progressFill"></span></div>
+  <div class="progress-label"><span id="progressText">0</span> / <span id="progressTotal">0</span> тем</div></div>
+  <ul class="toc" id="toc"></ul>
+</aside>
+<main class="main" id="main">
+
+<section class="hero" id="intro">
+  <p class="course-nav"><a href="module2-mlp-practice.html">← Модуль 2</a> · Модуль 3 · <span class="muted">Модуль 4 →</span></p>
+  <h1>Модуль 3. Свёрточные сети</h1>
+  <p>От «почему Linear плох на картинках» до SimpleVGG, skip connections и transfer learning VGG16 — лекция III и семинар 3.</p>
+  <p class="muted">Оценка времени: <strong style="color:var(--text)">3.5–4.5 часа</strong>.</p>
+</section>
+<div class="legend">
+  <span><i class="swatch" style="background:var(--data)"></i> данные</span>
+  <span><i class="swatch" style="background:var(--weights)"></i> веса / ядро</span>
+  <span><i class="swatch" style="background:var(--pred)"></i> карта признаков</span>
+  <span><i class="swatch" style="background:var(--loss)"></i> loss</span>
+  <span><i class="swatch" style="background:var(--grad)"></i> градиент</span>
+  <span><i class="swatch" style="background:var(--ok)"></i> верно</span>
+</div>
+<div class="map-card"><strong>Карта модуля</strong>
+<ol class="map-list">
+<li><a href="#t-why">Почему FC плох</a></li>
+<li><a href="#t-img">Изображение-тензор</a></li>
+<li><a href="#t-conv">Свёртка</a> + ядро 3×3</li>
+<li><a href="#t-geom">Stride / padding</a> + калькулятор</li>
+<li><a href="#t-ch">Несколько каналов</a></li>
+<li><a href="#t-pool">Pooling / GAP</a></li>
+<li><a href="#t-arch">Архитектура + RF</a> + SimpleVGG</li>
+<li><a href="#t-reg">Аугментации / BN2d / Dropout2d</a></li>
+<li><a href="#t-skip">Skip connections</a></li>
+<li><a href="#t-classic">LeNet / VGG / ResNet</a></li>
+<li><a href="#t-tl">Transfer learning</a></li>
+<li><a href="#t-code">Код свёртки</a></li>
+<li><a href="#t-final">Мини-тест</a></li>
+</ol></div>
+
+<section class="topic" id="t-why" data-topic="why">
+  <h2>1. Почему полносвязный слой плох для картинок</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Linear на пикселях ломает соседство и взрывает число параметров — свёртка решает обе проблемы.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 480 120" width="100%" style="max-width:480px">
+        <rect x="20" y="20" width="80" height="80" rx="8" fill="#e8e8ed" stroke="#6e6e73"/>
+        <text x="60" y="65" text-anchor="middle" font-size="11" fill="#6e6e73">28×28</text>
+        <text x="130" y="60" font-size="20" fill="#6e6e73">→</text>
+        <rect x="160" y="35" width="120" height="50" rx="8" fill="#f0f7ff" stroke="#0071e3"/>
+        <text x="220" y="65" text-anchor="middle" font-size="11" fill="#0071e3">Flatten 784</text>
+        <text x="310" y="60" font-size="20" fill="#6e6e73">→</text>
+        <rect x="340" y="35" width="120" height="50" rx="8" fill="#fff1f4" stroke="#e11d48"/>
+        <text x="400" y="58" text-anchor="middle" font-size="11" fill="#e11d48">Linear огромный</text>
+        <text x="400" y="74" text-anchor="middle" font-size="10" fill="#e11d48">теряет сетку</text>
+      </svg>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>FC к каждому пикселю независимо от позиции. Соседство (edge/texture) не закодировано. Для RGB 224×224 → Linear(150528, 1000) уже ~1.5·10⁸ весов только в первом слое.</p></div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-why">
+      <div class="step show"><div>Локальные паттерны повторяются по кадру → одни и те же веса можно «скользить» (свёртка).</div><div class="why">Weight sharing.</div></div>
+      <div class="step"><div>Параметров у Conv ≪ FC при той же выразительности для изображений.</div><div class="why">Мотивация CNN.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-why')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-why')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">CIFAR 32×32×3 → Flatten 3072. Linear(3072,64): 3072·64+64=196672. Conv2d(3,64,3,pad=1): (9·3+1)·64=1792.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget"><p class="widget-title">FC params vs Conv</p>
+      <div class="widget-controls"><label>H=W<input type="number" id="why-s" value="32" style="width:70px"></label>
+      <label>C<input type="number" id="why-c" value="3" style="width:70px"></label>
+      <label>out<input type="number" id="why-o" value="64" style="width:70px"></label></div>
+      <div class="readout" id="why-out"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code># плохо для фото:
+# nn.Flatten(); nn.Linear(3*224*224, 1000)</code></pre>
+    <div class="fillblank"><p>Conv2d(3,64,3) params с bias?</p>
+      <div class="row"><input type="number" id="ans-1792"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('1792',1792)">Проверить</button></div>
+      <div class="feedback" id="fb-1792"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Flatten до первого слоя на больших фото → OOM / overfit.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Документы/чеки/карточки в банке — почти всегда CNN/ViT, не голый MLP.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-why"><div class="q">Главный минус FC на картинках</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">теряется соседство + слишком много params</button>
+      <button type="button" class="opt" data-ok="0">не умеет float32</button>
+      <button type="button" class="opt" data-ok="0">нельзя на CPU</button></div>
+      <div class="feedback" data-explain-ok="Лекция." data-explain-bad="См. тему."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Пиксели связаны локально; свёртка использует это через общие веса окна.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">FC рвёт сетку и раздувает params. Conv = локальность + sharing.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('why')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-img" data-topic="img">
+  <h2>2. Изображение как тензор</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Путаница (H,W,C) vs (C,H,W) — частая причина shape errors в Conv2d.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>PIL/NumPy часто каналы последними; PyTorch Conv — каналы сразу после батча.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="dims">
+      <span class="dim-pill data">PIL/NumPy: (H,W,C)</span>
+      <span class="dim-pill data">PyTorch: (N,C,H,W)</span>
+      <span class="dim-pill weights">ToTensor: [0,1], затем Normalize</span>
+    </div>
+    <p><code>x.permute(2,0,1)</code> для одного кадра HWC→CHW.</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-img">
+      <div class="step show"><div>ToTensor делает CHW float; Normalize — mean/std датасета или ImageNet.</div><div class="why">CIFAR/ImageNet — свои константы.</div></div>
+      <div class="step"><div>Батч: stack кадров → (N,C,H,W).</div><div class="why">DataLoader.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-img')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-img')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">(32,32,3).permute(2,0,1) → (3,32,32). Батч 64 → (64,3,32,32).</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget"><p class="widget-title">Permute калькулятор</p>
+      <div class="widget-controls"><label>H<input id="im-h" type="number" value="32" style="width:70px"></label>
+      <label>W<input id="im-w" type="number" value="32" style="width:70px"></label>
+      <label>C<input id="im-c" type="number" value="3" style="width:70px"></label>
+      <label>N<input id="im-n" type="number" value="16" style="width:70px"></label></div>
+      <div class="readout" id="im-out"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>x = torch.from_numpy(img_hwc).permute(2,0,1).float()/255
+# batch: x.unsqueeze(0) → (1,C,H,W)</code></pre>
+    <div class="fillblank"><p>Shape после permute HWC→CHW для 32×32×3?</p>
+      <div class="row"><input type="text" id="ans-chw" placeholder="3,32,32"><button class="btn btn-sm btn-primary" type="button" onclick="checkFillStr('chw','3,32,32')">Проверить</button></div>
+      <div class="feedback" id="fb-chw"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Подать (N,H,W,C) в Conv2d — получите мусор/ошибку каналов.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Интеграция OpenCV (HWC BGR) с PyTorch (CHW RGB).</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-img"><div class="q">PyTorch Conv2d ждёт</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">(N,C,H,W)</button>
+      <button type="button" class="opt" data-ok="0">(N,H,W,C)</button>
+      <button type="button" class="opt" data-ok="0">(C,N,H,W)</button></div>
+      <div class="feedback" data-explain-ok="Стандарт torch." data-explain-bad="Каналы после батча."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Один кадр — 3 оси; батч добавляет N; порядок каналов критичен.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">HWC ↔ CHW через permute. Батч (N,C,H,W). Normalize после ToTensor.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('img')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-conv" data-topic="conv">
+  <h2>3. Свёртка</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span> <span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Один шаг свёртки — извлечь локальный признак (край, текстура). Стек ядер строит иерархию.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Наложили окно ядра → перемножили с пикселями → сложили = одна клетка карты признаков. Сдвинули окно — следующая клетка.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">$$(I*K)_{ij}=\sum_{u,v} I_{i+u,j+v}\,K_{u,v}$$</div>
+    <p>Размытие: все $1/9$. Sobel X / Y — детекторы вертикальных / горизонтальных границ.</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-cv">
+      <div class="step show"><div>Одна позиция: 9 умножений + сумма для 3×3.</div><div class="why">Базовый «нейрон» с локальным рецептивным полем.</div></div>
+      <div class="step"><div>Sobel: контрастные веса по краям окна → большой отклик на перепадах яркости.</div><div class="why">Ручные фильтры до обучения end-to-end.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-cv')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-cv')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">Патч [[1,2,3],[4,5,6],[7,8,9]] · ядро все 1/9 → среднее = 5.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Редактируемое ядро 3×3 + результат</p>
+      <p class="widget-hint">(1) Preset «blur»; (2) Sobel X/Y — края; (3) клик по карте — подсветка окна и сумма.</p>
+      <div class="widget-controls">
+        <button class="btn btn-sm" type="button" data-kern="blur">blur 1/9</button>
+        <button class="btn btn-sm" type="button" data-kern="sobelx">Sobel X</button>
+        <button class="btn btn-sm" type="button" data-kern="sobely">Sobel Y</button>
+        <button class="btn btn-sm" type="button" data-kern="id">identity</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+        <div><div class="muted" style="font-size:12px;margin-bottom:6px">ядро</div><div class="kernel-grid" id="kernGrid"></div></div>
+        <div><canvas id="convSrc" width="200" height="200"></canvas><div class="muted" style="font-size:12px">вход (клик)</div></div>
+        <div><canvas id="convOut" width="200" height="200"></canvas><div class="muted" style="font-size:12px">выход</div></div>
+      </div>
+      <div class="readout" id="convReadout"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code># NumPy один пиксель:
+# s = (patch * kernel).sum()</code></pre>
+    <div class="fillblank"><p>Среднее 1..9 при blur 1/9?</p>
+      <div class="row"><input type="number" id="ans-mean5"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('mean5',5)">Проверить</button></div>
+      <div class="feedback" id="fb-mean5"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Перепутать корреляцию и «математическую» свёртку с flip ядра — в DL обычно correlation.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Детекция границ на сканах до нейросети — классический Sobel.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-cv"><div class="q">Один шаг 3×3</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">9 произведений + сумма → одна клетка карты</button>
+      <button type="button" class="opt" data-ok="0">только max</button>
+      <button type="button" class="opt" data-ok="0">softmax по картинке</button></div>
+      <div class="feedback" data-explain-ok="Определение свёртки." data-explain-bad="Интуиция."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Скользящее окно с весами; отклик — локальный признак.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Наложили→перемножили→сложили. Blur 1/9, Sobel — края.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('conv')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-geom" data-topic="geom">
+  <h2>4. Kernel, stride, padding, dilation</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Форма карты признаков задаёт весь пайплайн до Linear. Ошибка в padding — «съехавший» размер.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Padding — рамка; stride — шаг окна; dilation — «дырявое» ядро (реже на старте).</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">$$\mathrm{out}=\left\lfloor\frac{W+2P-F}{S}\right\rfloor+1$$</div>
+    <p>Пример: 32×32, F=3, P=1 → stride 1: <strong>32</strong>; stride 2: <strong>16</strong>.</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-gm">
+      <div class="step show"><div>Вход расширили на P с каждой стороны → ширина W+2P.</div><div class="why">Same padding для F=3 → P=1.</div></div>
+      <div class="step"><div>Окно F с шагом S: число позиций = ⌊(W+2P−F)/S⌋+1.</div><div class="why">Семинар: 32→32 и 32→16.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-gm')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-gm')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">⌊(32+2−3)/1⌋+1=32; ⌊(32+2−3)/2⌋+1=16.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Калькулятор размера + анимация окна</p>
+      <p class="widget-hint">(1) Повторите 32/3/1 → 32 и stride 2 → 16; (2) P=0 — усадка; (3) смотрите бегущее окно.</p>
+      <div class="widget-controls">
+        <label>W<input type="number" id="gm-w" value="32" style="width:70px"></label>
+        <label>F<input type="number" id="gm-f" value="3" style="width:70px"></label>
+        <label>P<input type="number" id="gm-p" value="1" style="width:70px"></label>
+        <label>S<input type="number" id="gm-s" value="1" style="width:70px"></label>
+      </div>
+      <canvas id="gmCanvas" width="520" height="240"></canvas>
+      <div class="readout" id="gmOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+# out spatial: floor((W+2P-F)/S)+1</code></pre>
+    <div class="fillblank"><p>32, F=3, P=1, S=2 → out?</p>
+      <div class="row"><input type="number" id="ans-16"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('16',16)">Проверить</button></div>
+      <div class="feedback" id="fb-16"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>padding='same' в новых PyTorch ≠ всегда P=1 для любых F.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Подбор downsampling до нужного latent size под детектор.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-gm"><div class="q">32×32, k=3, p=1, s=1 →</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">32</button>
+      <button type="button" class="opt" data-ok="0">30</button>
+      <button type="button" class="opt" data-ok="0">16</button></div>
+      <div class="feedback" data-explain-ok="Семинар." data-explain-bad="Формула."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Out-size — сколько раз окно F с шагом S помещается в padded вход.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">out=⌊(W+2P−F)/S⌋+1. 32,3,1 → 32 (s=1) / 16 (s=2).</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('geom')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-ch" data-topic="ch">
+  <h2>5. Несколько каналов</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>RGB и feature maps — объёмы. Число параметров фильтра растёт с C_in.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Фильтр — кубик F×F×C_in; на выходе один канал; C_out таких кубиков.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">$$\#\mathrm{params}=(F\cdot F\cdot C_{in}+1)\cdot C_{out}$$</div>
+    <p>Conv2d(3,32,3) → <strong>896</strong>; Conv2d(32,32,3) → <strong>9248</strong>.</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-ch">
+      <div class="step show"><div>Один фильтр: 3·3·3=27 + bias = 28; ×32 = 896.</div><div class="why">Семинар.</div></div>
+      <div class="step"><div>Второй слой: 3·3·32+1=289; ×32=9248.</div><div class="why">Вопрос семинара.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-ch')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-ch')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace" id="ch-ex">896 и 9248 — проверьте калькулятором ниже.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Калькулятор Conv2d params</p>
+      <div class="widget-controls">
+        <label>C_in<input type="number" id="ch-in" value="3" style="width:70px"></label>
+        <label>C_out<input type="number" id="ch-out" value="32" style="width:70px"></label>
+        <label>F<input type="number" id="ch-f" value="3" style="width:70px"></label>
+        <label><input type="checkbox" id="ch-bias" checked> bias</label>
+      </div>
+      <div class="readout" id="ch-outtxt"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>nn.Conv2d(3,32,3)   # 896
+nn.Conv2d(32,32,3)  # 9248</code></pre>
+    <div class="fillblank"><p>Params Conv2d(3,32,3)?</p>
+      <div class="row"><input type="number" id="ans-896"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('896',896)">Проверить</button></div>
+      <div class="feedback" id="fb-896"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Забыть bias в подсчёте (−C_out).</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Оценка размера модели до деплоя на мобильный сканер.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-ch"><div class="q">Conv2d(32,32,3) params</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">9248</button>
+      <button type="button" class="opt" data-ok="0">896</button>
+      <button type="button" class="opt" data-ok="0">1024</button></div>
+      <div class="feedback" data-explain-ok="(9·32+1)·32." data-explain-bad="Формула."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Каждый выходной канал — свой фильтр по всем входам + bias.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">(F²·C_in+1)·C_out. 896 и 9248 — якоря семинара.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('ch')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-pool" data-topic="pool">
+  <h2>6. Pooling и GAP</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Сжать карту, увеличить поле зрения косвенно, снизить params перед Linear.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>MaxPool — «самый сильный отклик в окне»; AvgPool — среднее. Параметров нет.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>MaxPool2d(2)/AvgPool2d(2) обычно делят H,W на 2. <strong>GAP</strong> — среднее по всей карте H×W → вектор длины C.</p></div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-pl">
+      <div class="step show"><div>2×2 stride 2: (N,C,32,32)→(N,C,16,16).</div><div class="why">Как в SimpleVGG.</div></div>
+      <div class="step"><div>GAP заменяет Flatten больших карт → меньше переобучения.</div><div class="why">Современные CNN-классификаторы.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-pl')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-pl')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">Max [[1,5],[2,3]] → 5. Params pooling = 0.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">MaxPool 2×2 на сетке 4×4</p>
+      <canvas id="poolCanvas" width="420" height="200"></canvas>
+      <div class="readout" id="poolOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>nn.MaxPool2d(2); nn.AdaptiveAvgPool2d(1)  # GAP</code></pre>
+    <div class="fillblank"><p>Параметров у MaxPool2d?</p>
+      <div class="row"><input type="number" id="ans-pool0"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('pool0',0)">Проверить</button></div>
+      <div class="feedback" id="fb-pool0"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Слишком агрессивный pool — теряется деталь для мелких объектов.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Сжатие feature map перед головкой классификатора документов.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-pl"><div class="q">Pooling обычно</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">без обучаемых параметров</button>
+      <button type="button" class="opt" data-ok="0">имеет weight как Linear</button>
+      <button type="button" class="opt" data-ok="0">заменяет CE</button></div>
+      <div class="feedback" data-explain-ok="Только операция агрегации." data-explain-bad="Определение."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Downsample карт; GAP — экстремальный avg по пространству.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Max/Avg pool: 0 params. GAP → (N,C). 2×2 stride2 делит H,W пополам.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('pool')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-arch" data-topic="arch">
+  <h2>7. Архитектура CNN и receptive field</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span> <span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Нужно собрать Conv→ReLU→Pool…→Flatten→Linear и понимать, откуда 4096 входов в SimpleVGG.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Ранние слои — края; глубже — текстуры/части/объекты. Receptive field растёт с глубиной и pool/stride.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>SimpleVGG (CIFAR 32×32): два блока Conv-Conv-Pool → 8×8×64 = <strong>4096</strong> → Linear.</p>
+    <div class="dims"><span class="dim-pill data">(N,3,32,32)</span><span class="dim-pill pred">после block2: (N,64,8,8)</span></div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-ar">
+      <div class="step show"><div>Pool 2×2 дважды: 32→16→8.</div><div class="why">Каналы 3→32→64.</div></div>
+      <div class="step"><div>RF: каждый pool и conv расширяет «окно» на входе, видимое клеткой.</div><div class="why">Глубже — более глобальный контекст.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-ar')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-ar')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">8·8·64=4096. Две 3×3 вместо одной 5×5 — меньше params, тот же RF (примерно), больше нелинейностей.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Конструктор: форма и params после слоёв</p>
+      <p class="widget-hint">(1) SimpleVGG preset; (2) уберите pool — Flatten раздуется; (3) следите за RF.</p>
+      <div class="widget-controls">
+        <button class="btn btn-sm btn-primary" type="button" id="ar-vgg">SimpleVGG</button>
+        <button class="btn btn-sm" type="button" id="ar-reset">Сброс 32×32×3</button>
+      </div>
+      <div class="readout" id="arOut" style="white-space:pre-wrap;font-family:var(--mono);font-size:12px"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>class SimpleVGG(nn.Module):
+    def __init__(self, n_classes):
+        super().__init__()
+        self.block1 = nn.Sequential(
+            nn.Conv2d(3,32,3,padding='same'), nn.ReLU(),
+            nn.Conv2d(32,32,3,padding='same'), nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.block2 = nn.Sequential(
+            nn.Conv2d(32,64,3,padding='same'), nn.ReLU(),
+            nn.Conv2d(64,64,3,padding='same'), nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.classifier = nn.Sequential(
+            nn.Flatten(), nn.Linear(8*8*64, 64), nn.ReLU(),
+            nn.Linear(64, n_classes))</code></pre>
+    <div class="fillblank"><p>Входов в Linear SimpleVGG?</p>
+      <div class="row"><input type="number" id="ans-4096"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('4096',4096)">Проверить</button></div>
+      <div class="feedback" id="fb-4096"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Неверный in_features у Linear после смены числа pool.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Быстрый backbone для CIFAR-подобных задач до ResNet.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-ar"><div class="q">После 2× MaxPool2d на 32×32</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">8×8</button>
+      <button type="button" class="opt" data-ok="0">16×16</button>
+      <button type="button" class="opt" data-ok="0">4×4</button></div>
+      <div class="feedback" data-explain-ok="32/2/2=8." data-explain-bad="SimpleVGG."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Стек локальных фильтров + downsample; RF — сколько входа «видит» клетка.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Conv→ReLU→Pool…. SimpleVGG: 32→8×8×64=4096. RF растёт вглубь.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('arch')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-reg" data-topic="reg">
+  <h2>8. Переобучение CNN: аугментации, Dropout2d, BN2d</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span> <span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>CNN легко запоминают train; аугментации и регуляризация обязательны.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Flip/crop/jitter/rotate/cutout/шум — только train. Dropout2d гасит целые каналы. BN2d — BN по каналам карт.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>Train transforms ≠ test (на test обычно Resize/CenterCrop/Normalize без random).</p></div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-rg">
+      <div class="step show"><div>Аугментации расширяют распределение train без новых лейблов.</div><div class="why">Не применять random на test.</div></div>
+      <div class="step"><div>Dropout2d: маска на канал целиком — сильнее для feature maps.</div><div class="why">Аналог Dropout для CNN.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-rg')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-rg')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">RandomHorizontalFlip(p=0.5) — половина батча зеркалится. Test: flip нет.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Аугментации — что включено</p>
+      <div class="widget-controls" id="augBox">
+        <label><input type="checkbox" checked disabled> Normalize (train+test)</label>
+        <label><input type="checkbox" id="aug-flip" checked> Flip (train)</label>
+        <label><input type="checkbox" id="aug-crop" checked> Crop (train)</label>
+        <label><input type="checkbox" id="aug-jit"> ColorJitter (train)</label>
+      </div>
+      <div class="readout" id="augOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>train_tf = transforms.Compose([
+  transforms.RandomHorizontalFlip(), transforms.ToTensor(), ...])
+# nn.Dropout2d(0.2); nn.BatchNorm2d(64)</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Одинаковые random transforms на test — невоспроизводимое качество.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Аугментации фото документов: лёгкий rotate/noise, без агрессивного color jitter.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-rg"><div class="q">RandomFlip на test</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">не ставят (детерминизм)</button>
+      <button type="button" class="opt" data-ok="0">обязателен</button>
+      <button type="button" class="opt" data-ok="0">заменяет BN</button></div>
+      <div class="feedback" data-explain-ok="Только train." data-explain-bad="Аугментации."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Учить на вариациях; проверять на каноне.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Aug только train. Dropout2d/BN2d для карт. Test — стабильные transforms.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('reg')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-skip" data-topic="skip">
+  <h2>9. Skip connections</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Глубокие сети страдают от затухания градиента; Residual = X + F(X) даёт короткий путь.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 420 100" width="100%" style="max-width:420px">
+        <rect x="20" y="35" width="70" height="30" rx="8" fill="#e8e8ed"/><text x="55" y="55" text-anchor="middle" font-size="12">X</text>
+        <path d="M90 50 H140" stroke="#6e6e73" stroke-width="2" marker-end="url(#a)"/>
+        <rect x="150" y="20" width="100" height="60" rx="8" fill="#f0f7ff" stroke="#0071e3"/>
+        <text x="200" y="55" text-anchor="middle" font-size="12" fill="#0071e3">F(X)</text>
+        <path d="M250 50 H300" stroke="#6e6e73" stroke-width="2"/>
+        <path d="M55 35 V10 H320 V50" fill="none" stroke="#16a34a" stroke-width="2"/>
+        <text x="200" y="8" text-anchor="middle" font-size="11" fill="#16a34a">skip</text>
+        <rect x="310" y="35" width="90" height="30" rx="8" fill="#ecfdf3" stroke="#16a34a"/>
+        <text x="355" y="55" text-anchor="middle" font-size="12">X+F(X)</text>
+      </svg>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">$$\mathrm{Result}=X+F(X)$$</div>
+    <p>ResNet — residual blocks; DenseNet — конкатенация; U-Net — skips энкодер→декoder.</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-sk">
+      <div class="step show"><div>Градиент может течь напрямую по skip: ∂Result/∂X включает 1.</div><div class="why">Легче оптимизировать глубокие сети.</div></div>
+      <div class="step"><div>F учит «поправку» к тождеству, а не всё отображение с нуля.</div><div class="why">ResNet intuition.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-sk')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-sk')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">Если F≈0 в начале, Result≈X — сигнал не затухает.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget"><p class="widget-title">Слайдер «сила» F</p>
+      <div class="widget-controls"><label>α в X+αF <input type="range" id="sk-a" min="0" max="2" step="0.1" value="1"><span id="sk-av"></span></label></div>
+      <div class="readout" id="skOut"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>out = x + self.block(x)  # shapes must match (or proj skip)</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Сложение при разных shape каналов без 1×1 proj.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>ResNet18/50 — дефолтный backbone в CV-проде.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-sk"><div class="q">Residual блок</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">Result = X + F(X)</button>
+      <button type="button" class="opt" data-ok="0">только Dropout</button>
+      <button type="button" class="opt" data-ok="0">убирает ReLU навсегда</button></div>
+      <div class="feedback" data-explain-ok="Лекция." data-explain-bad="Skip."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Короткий путь для градиента и тождественный baseline.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">X+F(X). ResNet / DenseNet / U-Net — разные виды связей.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('skip')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-classic" data-topic="classic">
+  <h2>10. LeNet, VGG, ResNet</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Три вехи: первая практичная CNN; глубина + маленькие 3×3; residual для ещё большей глубины.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <table class="arch-table">
+      <tr><th>Сеть</th><th>Что нового</th></tr>
+      <tr><td>LeNet</td><td>Conv+Pool+FC на цифрах</td></tr>
+      <tr><td>VGG</td><td>Стек 3×3, большая глубина, единообразие</td></tr>
+      <tr><td>ResNet</td><td>Skip / residual, сотни слоёв</td></tr>
+    </table>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>SimpleVGG в семинаре — учебный «младший брат» VGG-блоков.</p></div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-cl">
+      <div class="step show"><div>Две 3×3 ≈ RF одной 5×5 при меньшем числе params и двух ReLU.</div><div class="why">Идея VGG.</div></div>
+      <div class="step"><div>Без skip глубина упирается в оптимизацию → ResNet.</div><div class="why">Лекция.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-cl')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-cl')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">5×5×C→: 25C; две 3×3: 9C+9C=18C весов на канал (без учёта роста каналов) — экономия.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget"><p class="widget-title">Quiz: кто что ввёл</p>
+      <div class="quiz" data-quiz="q-cl0" style="border:none;padding:0">
+        <div class="q">Skip connections —</div>
+        <div class="opts"><button type="button" class="opt" data-ok="1">ResNet</button>
+        <button type="button" class="opt" data-ok="0">только LeNet</button>
+        <button type="button" class="opt" data-ok="0">только Softmax</button></div>
+        <div class="feedback" data-explain-ok="ResNet." data-explain-bad="Таблица."></div>
+      </div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code># torchvision.models.resnet18(weights=...)
+# torchvision.models.vgg16(weights=...)</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Путать VGG-блок семинара с полным VGG16 ImageNet.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>ResNet18 — частый старт fine-tuning.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-cl"><div class="q">VGG прославилась</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">стеком 3×3 и глубиной</button>
+      <button type="button" class="opt" data-ok="0">только attention</button>
+      <button type="button" class="opt" data-ok="0">отказом от ReLU</button></div>
+      <div class="feedback" data-explain-ok="Лекция." data-explain-bad="Таблица."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Эволюция: простая CNN → глубокий стек 3×3 → residual.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">LeNet → VGG(3×3) → ResNet(skip).</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('classic')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-tl" data-topic="tl">
+  <h2>11. Transfer learning (VGG16)</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Мало своих картинок — берём features с ImageNet, учим голову.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>VGG16: <code>features</code> + <code>classifier</code>. После features на 224×224 → 512×7×7 = <strong>25088</strong> входов в FC.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>Заменить последний Linear; заморозка <code>requires_grad=False</code>; проверить, что grad не течёт.</p>
+    <div class="dims"><span class="dim-pill data">512·7·7=25088</span></div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-tl">
+      <div class="step show"><div>Почему 25088 при CIFAR 32×32? Предобучение на 224; для 32 нужны другие головы/адаптация (семинар поясняет).</div><div class="why">Не путать вход ImageNet и CIFAR.</div></div>
+      <div class="step"><div>Проверка заморозки: все p.requires_grad False у features; opt только на classifier.</div><div class="why">Иначе «случайно» дообучите весь VGG.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-tl')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-tl')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">512×7×7=25088.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Заморозка — счётчик trainable</p>
+      <div class="widget-controls">
+        <label><input type="checkbox" id="tl-freeze" checked> freeze features</label>
+        <label>классы <input type="number" id="tl-cls" value="10" style="width:70px"></label>
+      </div>
+      <div class="readout" id="tlOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <pre><code>model = torchvision.models.vgg16(weights="DEFAULT")
+for p in model.features.parameters():
+    p.requires_grad = False
+model.classifier[6] = nn.Linear(4096, n_classes)
+# проверить: [p.requires_grad for p in model.features.parameters()]</code></pre>
+    <div class="fillblank"><p>512×7×7 = ?</p>
+      <div class="row"><input type="number" id="ans-25088"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('25088',25088)">Проверить</button></div>
+      <div class="feedback" id="fb-25088"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Забыли eval/freeze BN в features при partial freeze (модуль 4 углубит).</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Классификация редких типов документов на ImageNet-backbone.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-tl"><div class="q">25088 это</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">512·7·7 входов classifier VGG16</button>
+      <button type="button" class="opt" data-ok="0">число классов ImageNet</button>
+      <button type="button" class="opt" data-ok="0">batch size</button></div>
+      <div class="feedback" data-explain-ok="Семинар." data-explain-bad="Transfer."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Переиспользуем визуальные признаки; учим новую голову под свою задачу.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">features+classifier; 25088; freeze requires_grad=False; заменить последний Linear.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('tl')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-code" data-topic="code">
+  <h2>12. Код: NumPy → F.conv2d → nn.Conv2d</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span> <span class="badge extra">сверх курса</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Связать формулу с тремя уровнями реализации.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Два цикла по выходу → та же математика, что у nn.Conv2d.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>Ручная свёртка valid 3×3; затем API PyTorch.</p></div>
+  <div class="block"><h3><span class="n">4</span> Вывод</h3>
+    <div class="steps" data-steps="s-cd">
+      <div class="step show"><div>NumPy: for i,j: out[i,j]=(img[i:i+3,j:j+3]*k).sum()</div><div class="why">Медленно, но прозрачно.</div></div>
+      <div class="step"><div>F.conv2d / nn.Conv2d — те же ops на батче и каналах.</div><div class="why">Учебный путь семинара.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('s-cd')">Следующий шаг</button><button class="btn btn-sm" type="button" onclick="resetSteps('s-cd')">Сначала</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex"><div class="trace">Сверка: blur 1/9 на константном поле 1 → выход 1.</div></div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив / Pyodide</h3>
+    <div class="code-cell" id="pyCell1">
+      <div class="toolbar">
+        <button class="btn btn-sm btn-primary" type="button" onclick="runPyCell('pyCell1')">Запустить</button>
+        <button class="btn btn-sm" type="button" onclick="showPySol('pyCell1')">Решение</button>
+        <span class="muted" id="pyStatus" style="font-size:12px">Pyodide: не загружен</span>
+      </div>
+      <textarea id="pyCell1-src" spellcheck="false">import numpy as np
+img = np.arange(25, dtype=float).reshape(5,5)
+k = np.ones((3,3))/9
+out = np.zeros((3,3))
+for i in range(3):
+    for j in range(3):
+        out[i,j] = (img[i:i+3, j:j+3] * k).sum()
+print(out.round(2))
+print("center", round(float(out[1,1]), 2))</textarea>
+      <div class="out" id="pyCell1-out">NumPy conv 5×5 valid 3×3.</div>
+    </div>
+    <div class="fillblank"><p>JS: сумма 1..9 / 9?</p>
+      <div class="row"><input type="number" id="ans-c5"><button class="btn btn-sm btn-primary" type="button" onclick="checkFill('c5',5)">Проверить</button></div>
+      <div class="feedback" id="fb-c5"></div></div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код PyTorch</h3>
+    <pre><code>import torch.nn.functional as F
+x = torch.randn(1,1,5,5)
+w = torch.ones(1,1,3,3)/9
+y = F.conv2d(x, w)  # (1,1,3,3)
+# layer = nn.Conv2d(1,1,3); y = layer(x)</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Забыть размер батча/канала в F.conv2d (нужен 4D).</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Отладка custom CUDA/kernel vs reference NumPy.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-cd"><div class="q">Valid conv 5×5 с ядром 3×3 даёт</div>
+      <div class="opts"><button type="button" class="opt" data-ok="1">3×3</button>
+      <button type="button" class="opt" data-ok="0">5×5</button>
+      <button type="button" class="opt" data-ok="0">7×7</button></div>
+      <div class="feedback" data-explain-ok="⌊(5-3)/1⌋+1=3." data-explain-bad="Формула P=0."></div></div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Два цикла — определение; библиотека ускоряет то же.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">NumPy 2 цикла → F.conv2d → nn.Conv2d / SimpleVGG.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('code')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-final" data-topic="final">
+  <h2>Итоговый мини-тест</h2>
+  <div class="quiz" data-quiz="f1"><div class="q">1. Формула out spatial</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">⌊(W+2P−F)/S⌋+1</button><button type="button" class="opt" data-ok="0">W·F·S</button><button type="button" class="opt" data-ok="0">только W−F</button></div>
+    <div class="feedback" data-explain-ok="Семинар." data-explain-bad="Geom."></div></div>
+  <div class="quiz" data-quiz="f2"><div class="q">2. 32, k=3, p=1, s=2</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">16</button><button type="button" class="opt" data-ok="0">32</button><button type="button" class="opt" data-ok="0">30</button></div>
+    <div class="feedback" data-explain-ok="Материалы." data-explain-bad="Посчитайте."></div></div>
+  <div class="quiz" data-quiz="f3"><div class="q">3. Conv2d(3,32,3) params</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">896</button><button type="button" class="opt" data-ok="0">9248</button><button type="button" class="opt" data-ok="0">32</button></div>
+    <div class="feedback" data-explain-ok="28×32." data-explain-bad="Каналы."></div></div>
+  <div class="quiz" data-quiz="f4"><div class="q">4. Conv2d(32,32,3)</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">9248</button><button type="button" class="opt" data-ok="0">896</button><button type="button" class="opt" data-ok="0">1024</button></div>
+    <div class="feedback" data-explain-ok="289×32." data-explain-bad="Формула."></div></div>
+  <div class="quiz" data-quiz="f5"><div class="q">5. SimpleVGG Flatten</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">4096</button><button type="button" class="opt" data-ok="0">25088</button><button type="button" class="opt" data-ok="0">784</button></div>
+    <div class="feedback" data-explain-ok="8·8·64." data-explain-bad="Arch."></div></div>
+  <div class="quiz" data-quiz="f6"><div class="q">6. VGG16 classifier in</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">25088</button><button type="button" class="opt" data-ok="0">4096</button><button type="button" class="opt" data-ok="0">1000</button></div>
+    <div class="feedback" data-explain-ok="512·7·7." data-explain-bad="TL."></div></div>
+  <div class="quiz" data-quiz="f7"><div class="q">7. Pooling params</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">0</button><button type="button" class="opt" data-ok="0">как у Conv</button><button type="button" class="opt" data-ok="0">C_out</button></div>
+    <div class="feedback" data-explain-ok="Нет весов." data-explain-bad="Pool."></div></div>
+  <div class="quiz" data-quiz="f8"><div class="q">8. Residual</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">X+F(X)</button><button type="button" class="opt" data-ok="0">X·F(X)</button><button type="button" class="opt" data-ok="0">только MaxPool</button></div>
+    <div class="feedback" data-explain-ok="Skip." data-explain-bad="Skip topic."></div></div>
+  <div class="quiz" data-quiz="f9"><div class="q">9. PyTorch image batch</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">(N,C,H,W)</button><button type="button" class="opt" data-ok="0">(N,H,W,C)</button><button type="button" class="opt" data-ok="0">(H,W,C,N)</button></div>
+    <div class="feedback" data-explain-ok="CHW." data-explain-bad="Img topic."></div></div>
+  <div class="quiz" data-quiz="f10"><div class="q">10. Augmentations</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">на train, не random на test</button><button type="button" class="opt" data-ok="0">только на test</button><button type="button" class="opt" data-ok="0">вместо loss</button></div>
+    <div class="feedback" data-explain-ok="Reg topic." data-explain-bad="Аугментации."></div></div>
+  <div class="final-score" id="finalScore">Ответьте на вопросы — счёт обновится.</div>
+  <h3 style="margin-top:28px">Шпаргалка модуля 3</h3>
+  <div class="cheat">
+    <p>FC плох на фото. (N,C,H,W). Свёртка: окно→dot. out=⌊(W+2P−F)/S⌋+1.</p>
+    <p>Params (F²C_in+1)C_out: 896, 9248. Pool 0 params. SimpleVGG 4096. Skip X+F(X).</p>
+    <p>VGG16: 25088. Freeze features. NumPy loops → Conv2d.</p>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('final')">Отметить</button></div>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const STORAGE_KEY="dl-module3-progress-v1";
+const TOPICS=[
+  {id:"intro",label:"Введение",topic:null},
+  {id:"t-why",label:"1. Почему FC плох",topic:"why"},
+  {id:"t-img",label:"2. Тензор картинки",topic:"img"},
+  {id:"t-conv",label:"3. Свёртка",topic:"conv"},
+  {id:"t-geom",label:"4. Stride/pad",topic:"geom"},
+  {id:"t-ch",label:"5. Каналы",topic:"ch"},
+  {id:"t-pool",label:"6. Pooling",topic:"pool"},
+  {id:"t-arch",label:"7. Архитектура",topic:"arch"},
+  {id:"t-reg",label:"8. Aug/BN/DO",topic:"reg"},
+  {id:"t-skip",label:"9. Skip",topic:"skip"},
+  {id:"t-classic",label:"10. LeNet/VGG/ResNet",topic:"classic"},
+  {id:"t-tl",label:"11. Transfer",topic:"tl"},
+  {id:"t-code",label:"12. Код",topic:"code"},
+  {id:"t-final",label:"Мини-тест",topic:"final"}
+];
+function loadProgress(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch(e){return{};}}
+function saveProgress(p){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(p));}catch(e){}}
+let progress=loadProgress(); if(!progress.done)progress.done={}; if(!progress.quiz)progress.quiz={};
+function buildToc(){ const toc=document.getElementById("toc"); toc.innerHTML="";
+  TOPICS.forEach(t=>{ const li=document.createElement("li"); const a=document.createElement("a");
+    a.href="#"+t.id; a.dataset.topic=t.topic||"";
+    a.innerHTML='<span class="dot"></span><span>'+t.label+"</span>";
+    if(t.topic&&progress.done[t.topic]) a.classList.add("done");
+    li.appendChild(a); toc.appendChild(li); }); updateProgressUI(); }
+function updateProgressUI(){ const keys=TOPICS.map(t=>t.topic).filter(Boolean); const n=keys.filter(k=>progress.done[k]).length;
+  document.getElementById("progressTotal").textContent=keys.length; document.getElementById("progressText").textContent=n;
+  document.getElementById("progressFill").style.width=(100*n/keys.length)+"%";
+  document.querySelectorAll("#toc a").forEach(a=>{ if(a.dataset.topic&&progress.done[a.dataset.topic]) a.classList.add("done"); }); }
+window.markDone=function(topic){ progress.done[topic]=true; saveProgress(progress); updateProgressUI(); };
+window.toggleNav=function(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("overlay").classList.toggle("show"); };
+window.closeNav=function(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); };
+window.nextStep=function(id){ const root=document.querySelector('[data-steps="'+id+'"]'); if(!root)return;
+  const steps=[...root.querySelectorAll(".step")]; const shown=steps.filter(s=>s.classList.contains("show")).length;
+  if(shown<steps.length) steps[shown].classList.add("show");
+  if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([root]); };
+window.resetSteps=function(id){ const root=document.querySelector('[data-steps="'+id+'"]'); if(!root)return;
+  [...root.querySelectorAll(".step")].forEach((s,i)=>{ if(i===0)s.classList.add("show"); else s.classList.remove("show"); }); };
+window.checkFill=function(key, expected){ const inp=document.getElementById("ans-"+key), fb=document.getElementById("fb-"+key);
+  const v=parseFloat(inp.value); fb.style.display="block";
+  if(Number.isFinite(v)&&Math.abs(v-expected)<1e-6){ fb.style.color="var(--ok)"; fb.textContent="Верно."; }
+  else { fb.style.color="var(--loss)"; fb.textContent="Ожидается "+expected+"."; } };
+window.checkFillStr=function(key, expected){ const inp=document.getElementById("ans-"+key), fb=document.getElementById("fb-"+key);
+  const v=(inp.value||"").replace(/\s/g,""); fb.style.display="block";
+  if(v===expected){ fb.style.color="var(--ok)"; fb.textContent="Верно."; } else { fb.style.color="var(--loss)"; fb.textContent="Ожидается "+expected+"."; } };
+function wireQuizzes(){ document.querySelectorAll(".quiz").forEach(q=>{ const id=q.dataset.quiz;
+  q.querySelectorAll(".opt").forEach(btn=>{ btn.addEventListener("click",()=>{ if(q.dataset.locked)return; q.dataset.locked="1";
+    const ok=btn.dataset.ok==="1"; btn.classList.add(ok?"correct":"wrong");
+    q.querySelectorAll(".opt").forEach(b=>{ if(b.dataset.ok==="1") b.classList.add("correct"); });
+    const fb=q.querySelector(".feedback"); if(fb){ fb.classList.add("show"); fb.style.color=ok?"var(--ok)":"var(--loss)";
+      fb.textContent=ok?(fb.dataset.explainOk||"Верно."):(fb.dataset.explainBad||"Неверно."); }
+    progress.quiz[id]=ok?1:0; saveProgress(progress); updateFinalScore(); }); }); }); }
+function updateFinalScore(){ const ids=["f1","f2","f3","f4","f5","f6","f7","f8","f9","f10"];
+  const answered=ids.filter(i=>progress.quiz[i]!==undefined).length; const correct=ids.filter(i=>progress.quiz[i]===1).length;
+  const el=document.getElementById("finalScore"); if(!el)return;
+  el.textContent=!answered?"Ответьте на вопросы — счёт обновится.":"Результат: "+correct+" / "+ids.length+" (отвечено "+answered+")"; }
+
+function bindLive(){
+  const why=()=>{ const s=+document.getElementById("why-s").value,c=+document.getElementById("why-c").value,o=+document.getElementById("why-o").value;
+    const flat=s*s*c; const fc=flat*o+o; const conv=(9*c+1)*o;
+    document.getElementById("why-out").textContent="Flatten "+flat+" → Linear params="+fc+"  |  Conv3×3 params="+conv+"  (в ×"+(fc/conv).toFixed(1)+" раз меньше)"; };
+  ["why-s","why-c","why-o"].forEach(id=>document.getElementById(id).addEventListener("input",why)); why();
+
+  const im=()=>{ const H=+document.getElementById("im-h").value,W=+document.getElementById("im-w").value,C=+document.getElementById("im-c").value,N=+document.getElementById("im-n").value;
+    document.getElementById("im-out").textContent="HWC ("+H+","+W+","+C+") → CHW ("+C+","+H+","+W+") → batch ("+N+","+C+","+H+","+W+")"; };
+  ["im-h","im-w","im-c","im-n"].forEach(id=>document.getElementById(id).addEventListener("input",im)); im();
+
+  const ch=()=>{ const cin=+document.getElementById("ch-in").value, cout=+document.getElementById("ch-out").value, F=+document.getElementById("ch-f").value, bias=document.getElementById("ch-bias").checked;
+    const p=(F*F*cin+(bias?1:0))*cout; document.getElementById("ch-outtxt").textContent="params = ("+F+"²·"+cin+(bias?"+1":"")+")·"+cout+" = "+p+(p===896||p===9248?"  ✓":""); };
+  ["ch-in","ch-out","ch-f","ch-bias"].forEach(id=>document.getElementById(id).addEventListener("input",ch)); ch();
+
+  const gm=()=>{ const W=+document.getElementById("gm-w").value,F=+document.getElementById("gm-f").value,P=+document.getElementById("gm-p").value,S=+document.getElementById("gm-s").value;
+    const out=Math.floor((W+2*P-F)/S)+1; document.getElementById("gmOut").textContent="out = ⌊("+W+"+2·"+P+"−"+F+")/"+S+"⌋+1 = "+out; drawGeom(W,F,P,S,out); };
+  ["gm-w","gm-f","gm-p","gm-s"].forEach(id=>document.getElementById(id).addEventListener("input",gm));
+  window._gmRefresh=gm; gm();
+
+  document.getElementById("sk-a").oninput=function(){ document.getElementById("sk-av").textContent=this.value;
+    document.getElementById("skOut").textContent="Result = X + "+this.value+"·F(X); при α=0 тождество, градиент по skip = 1"; };
+  document.getElementById("sk-a").dispatchEvent(new Event("input"));
+
+  const aug=()=>{ const f=document.getElementById("aug-flip").checked,c=document.getElementById("aug-crop").checked,j=document.getElementById("aug-jit").checked;
+    document.getElementById("augOut").textContent="train: Normalize + "+[f&&"Flip",c&&"Crop",j&&"Jitter"].filter(Boolean).join(", ")+"  |  test: только Normalize (+ resize/crop детерм.)"; };
+  ["aug-flip","aug-crop","aug-jit"].forEach(id=>document.getElementById(id).addEventListener("input",aug)); aug();
+
+  const tl=()=>{ const freeze=document.getElementById("tl-freeze").checked; const cls=+document.getElementById("tl-cls").value;
+    // rough VGG16: features ~14714688, classifier last 4096*cls+cls
+    const head=4096*cls+cls; const feat=14714688;
+    document.getElementById("tlOut").textContent=freeze?("trainable ≈ classifier head (last Linear ~"+head+" for "+cls+" classes); features frozen; 512·7·7=25088")
+      :("trainable ≈ features "+feat+" + head — fine-tune целиком"); };
+  ["tl-freeze","tl-cls"].forEach(id=>document.getElementById(id).addEventListener("input",tl)); tl();
+}
+
+let gmAnim=0;
+function drawGeom(W,F,P,S,out){
+  const c=document.getElementById("gmCanvas"); if(!c)return; const ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  const scale=Math.min(180/(W+2*P), 8); const ox=40, oy=30;
+  ctx.strokeStyle="#d2d2d7"; ctx.strokeRect(ox,oy,(W+2*P)*scale,(W+2*P)*scale);
+  ctx.fillStyle="rgba(0,113,227,0.08)"; ctx.fillRect(ox+P*scale,oy+P*scale,W*scale,W*scale);
+  const t=(gmAnim++ % Math.max(out,1));
+  const i=t % out, j=Math.floor(t/out)%Math.max(out,1);
+  const x=ox+(i*S)*scale, y=oy+(j*S)*scale;
+  ctx.strokeStyle="#ea580c"; ctx.lineWidth=2; ctx.strokeRect(x,y,F*scale,F*scale);
+  ctx.fillStyle="#1d1d1f"; ctx.font="12px sans-serif"; ctx.fillText("окно F="+F+" → out "+out+"×"+out, ox, oy+(W+2*P)*scale+20);
+  requestAnimationFrame(()=>setTimeout(()=>{ if(window._gmRefresh){ /* soft anim */ 
+    const c2=document.getElementById("gmCanvas"); if(!c2)return;
+    // only redraw window position cheaply every 400ms via interval elsewhere
+  }},0));
+}
+setInterval(()=>{ const W=+document.getElementById("gm-w")?.value||32,F=+document.getElementById("gm-f")?.value||3,P=+document.getElementById("gm-p")?.value||1,S=+document.getElementById("gm-s")?.value||1;
+  const out=Math.floor((W+2*P-F)/S)+1; drawGeom(W,F,P,S,out); }, 450);
+
+function widgetConv(){
+  const grid=document.getElementById("kernGrid");
+  const presets={ blur:Array(9).fill(1/9), sobelx:[-1,0,1,-2,0,2,-1,0,1], sobely:[-1,-2,-1,0,0,0,1,2,1], id:[0,0,0,0,1,0,0,0,0] };
+  let k=presets.blur.slice();
+  for(let i=0;i<9;i++){ const inp=document.createElement("input"); inp.type="number"; inp.step="0.1"; inp.value=k[i];
+    inp.oninput=()=>{ k[i]=parseFloat(inp.value)||0; render(); }; grid.appendChild(inp); }
+  function syncInputs(){ [...grid.children].forEach((inp,i)=>inp.value=k[i]); }
+  document.querySelectorAll("[data-kern]").forEach(btn=>btn.onclick=()=>{ k=presets[btn.dataset.kern].slice(); syncInputs(); render(); });
+
+  // synthetic image with edge
+  const N=32; const img=new Float32Array(N*N);
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){ img[y*N+x]=(x>N/2?0.85:0.15)+0.05*Math.sin((x+y)/3); if(Math.hypot(x-10,y-10)<4) img[y*N+x]=1; }
+  let sel={x:10,y:10};
+  const src=document.getElementById("convSrc"), outc=document.getElementById("convOut");
+  const sctx=src.getContext("2d"), octx=outc.getContext("2d");
+  function getK(){ return [[k[0],k[1],k[2]],[k[3],k[4],k[5]],[k[6],k[7],k[8]]]; }
+  function convAt(x,y){ let s=0; const K=getK(); for(let u=-1;u<=1;u++) for(let v=-1;v<=1;v++){
+      const xx=x+v, yy=y+u; if(xx<0||yy<0||xx>=N||yy>=N) continue; s+=img[yy*N+xx]*K[u+1][v+1]; } return s; }
+  function render(){
+    const scale=src.width/N;
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){ const v=Math.max(0,Math.min(1,img[y*N+x])); sctx.fillStyle="rgb("+((v*255)|0)+","+((v*255)|0)+","+((v*255)|0)+")"; sctx.fillRect(x*scale,y*scale,scale,scale); }
+    // highlight window
+    sctx.strokeStyle="#ea580c"; sctx.lineWidth=2; sctx.strokeRect((sel.x-1)*scale,(sel.y-1)*scale,3*scale,3*scale);
+    let mn=Infinity,mx=-Infinity; const out=new Float32Array(N*N);
+    for(let y=1;y<N-1;y++) for(let x=1;x<N-1;x++){ const v=convAt(x,y); out[y*N+x]=v; if(v<mn)mn=v; if(v>mx)mx=v; }
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){ let v=out[y*N+x]; v=mx>mn?(v-mn)/(mx-mn):0.5; octx.fillStyle="rgb("+((v*255)|0)+","+((v*255)|0)+","+((v*255)|0)+")"; octx.fillRect(x*scale,y*scale,scale,scale); }
+    const val=convAt(sel.x,sel.y);
+    let detail=""; const K=getK(); for(let u=-1;u<=1;u++){ for(let v=-1;v<=1;v++){ const xx=sel.x+v,yy=sel.y+u; const pix=img[yy*N+xx]; detail+=pix.toFixed(2)+"×"+K[u+1][v+1].toFixed(2)+" "; } detail+=" | "; }
+    document.getElementById("convReadout").textContent="окно @("+sel.x+","+sel.y+") → "+val.toFixed(3)+"   "+detail;
+  }
+  src.addEventListener("pointerdown", e=>{ const r=src.getBoundingClientRect(); const x=((e.clientX-r.left)/r.width*N)|0; const y=((e.clientY-r.top)/r.height*N)|0;
+    sel={x:Math.max(1,Math.min(N-2,x)), y:Math.max(1,Math.min(N-2,y))}; render(); });
+  render();
+}
+
+function widgetPool(){
+  const c=document.getElementById("poolCanvas"); if(!c)return; const ctx=c.getContext("2d");
+  const grid=[[1,5,2,0],[3,4,7,1],[2,8,3,6],[0,1,9,2]];
+  const out=[[Math.max(1,5,3,4),Math.max(2,0,7,1)],[Math.max(2,8,0,1),Math.max(3,6,9,2)]];
+  ctx.clearRect(0,0,c.width,c.height);
+  grid.forEach((row,i)=>row.forEach((v,j)=>{ ctx.fillStyle="#e8e8ed"; ctx.fillRect(20+j*40,20+i*40,36,36); ctx.fillStyle="#1d1d1f"; ctx.font="14px sans-serif"; ctx.fillText(v, 32+j*40, 44+i*40); }));
+  out.forEach((row,i)=>row.forEach((v,j)=>{ ctx.fillStyle="#f0f7ff"; ctx.strokeStyle="#0071e3"; ctx.strokeRect(240+j*50,40+i*50,44,44); ctx.fillStyle="#0071e3"; ctx.font="16px sans-serif"; ctx.fillText(v, 252+j*50, 68+i*50); }));
+  document.getElementById("poolOut").textContent="MaxPool2×2 stride2 → [[5,7],[8,9]]  params=0";
+}
+
+function widgetArch(){
+  function showSimpleVGG(){
+    const lines=[
+      "input (N,3,32,32)",
+      "Conv3×3 same 32 → (N,32,32,32)  params 896",
+      "Conv3×3 same 32 → (N,32,32,32)  params 9248",
+      "MaxPool2 → (N,32,16,16)",
+      "Conv3×3 same 64 → (N,64,16,16)  params 18496",
+      "Conv3×3 same 64 → (N,64,16,16)  params 36928",
+      "MaxPool2 → (N,64,8,8)",
+      "Flatten → (N,4096)",
+      "Linear 4096→64 → Linear → classes",
+      "RF растёт: каждый 3×3 +1 к полю (с учётом pool ×2)"
+    ];
+    document.getElementById("arOut").textContent=lines.join("\n");
+  }
+  document.getElementById("ar-vgg").onclick=showSimpleVGG;
+  document.getElementById("ar-reset").onclick=()=>{ document.getElementById("arOut").textContent="(N,3,32,32) — нажмите SimpleVGG"; };
+  showSimpleVGG();
+}
+
+/* Pyodide */
+let pyodideReady=null, pyodideFailed=false;
+const pySol={pyCell1:`import numpy as np
+img = np.arange(25, dtype=float).reshape(5,5)
+k = np.ones((3,3))/9
+out = np.zeros((3,3))
+for i in range(3):
+    for j in range(3):
+        out[i,j] = (img[i:i+3, j:j+3] * k).sum()
+print(out.round(2))
+print("center", round(float(out[1,1]), 2))`};
+async function ensurePyodide(){
+  if(pyodideFailed) throw new Error("Pyodide недоступен");
+  if(pyodideReady) return pyodideReady;
+  const st=document.getElementById("pyStatus"); if(st) st.textContent="Pyodide: загрузка…";
+  pyodideReady=(async()=>{
+    if(!window.loadPyodide){ await new Promise((res,rej)=>{ const s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"; s.onload=res; s.onerror=()=>rej(new Error("script")); document.head.appendChild(s); }); }
+    const py=await Promise.race([loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),45000))]);
+    await py.loadPackage("numpy"); if(st) st.textContent="Pyodide: готов"; return py;
+  })();
+  try{ return await pyodideReady; }catch(e){ pyodideFailed=true; pyodideReady=null; if(st)st.textContent="Pyodide: ошибка"; throw e; }
+}
+window.runPyCell=async function(id){ const src=document.getElementById(id+"-src").value; const out=document.getElementById(id+"-out");
+  out.className="out"; out.textContent="Выполняется…";
+  try{ const py=await ensurePyodide(); let printed="";
+    py.setStdout({batched:s=>{printed+=s+"\n";}}); py.setStderr({batched:s=>{printed+=s+"\n";}});
+    await py.runPythonAsync(src); out.textContent=printed.trim()||"(нет вывода)";
+    if(printed.includes("12.")) out.classList.add("ok");
+  }catch(e){ out.classList.add("err"); out.textContent="Ошибка: "+e.message; } };
+window.showPySol=function(id){ document.getElementById(id+"-src").value=pySol[id]; };
+
+function spy(){ const links=[...document.querySelectorAll("#toc a")]; let cur=links[0];
+  links.forEach(a=>{ const el=document.querySelector(a.getAttribute("href")); if(el&&el.getBoundingClientRect().top<120) cur=a; });
+  links.forEach(a=>a.classList.toggle("active",a===cur)); }
+document.addEventListener("DOMContentLoaded",()=>{
+  buildToc(); wireQuizzes(); bindLive(); widgetConv(); widgetPool(); widgetArch(); updateFinalScore();
+  document.addEventListener("scroll",spy,{passive:true}); spy();
+  document.querySelectorAll("#toc a").forEach(a=>a.addEventListener("click",()=>closeNav()));
+});
+})();
+</script>
+</body>
+</html>
