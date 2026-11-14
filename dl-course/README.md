@@ -6,3 +6,4 @@
 | [`module1-tensors-autograd.html`](./module1-tensors-autograd.html) | 1 · Autograd |
 | [`module2-mlp-practice.html`](./module2-mlp-practice.html) | 2 · MLP практика |
 | [`module3-cnn.html`](./module3-cnn.html) | 3 · Свёрточные сети |
+| [`module4-cv-practice.html`](./module4-cv-practice.html) | 4 · CV на практике |

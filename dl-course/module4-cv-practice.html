@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Модуль 4 · Компьютерное зрение на практике</title>
+<link rel="icon" href="data:,">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root {
+  --bg: #fbfbfd;
+  --bg-card: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0071e3;
+  --accent-soft: #e8f2fc;
+  --data: #6e6e73;
+  --weights: #0071e3;
+  --pred: #7c3aed;
+  --loss: #e11d48;
+  --grad: #ea580c;
+  --ok: #16a34a;
+  --radius: 18px;
+  --sidebar-w: 280px;
+  --font: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif;
+  --mono: "SF Mono", Menlo, ui-monospace, monospace;
+  --max-prose: 42rem;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; font-family: var(--font); color: var(--text);
+  background: var(--bg); line-height: 1.55; font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+pre {
+  font-family: var(--mono); background: #f5f5f7; border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.45;
+}
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--bg-card); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 20px 16px 40px; z-index: 40;
+}
+.sidebar h1 { font-size: 15px; margin: 0 0 4px; font-weight: 650; }
+.sidebar .course-pos { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+.progress-wrap { margin-bottom: 16px; }
+.progress-bar {
+  height: 6px; background: #e8e8ed; border-radius: 999px; overflow: hidden;
+}
+.progress-bar > span {
+  display: block; height: 100%; width: 0%; background: var(--accent);
+  transition: width .25s ease;
+}
+.progress-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc a {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 8px; border-radius: 10px; color: var(--text);
+  font-size: 13px; line-height: 1.35; text-decoration: none;
+}
+.toc a:hover { background: #f5f5f7; text-decoration: none; }
+.toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 560; }
+.toc .dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: transparent;
+}
+.toc a.done .dot { background: var(--ok); border-color: var(--ok); }
+.main {
+  margin-left: var(--sidebar-w); flex: 1; padding: 28px 32px 80px;
+  max-width: calc(var(--max-prose) + 280px);
+}
+.topbar-mobile {
+  display: none; position: sticky; top: 0; z-index: 50;
+  background: rgba(251,251,253,.92); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border); padding: 12px 16px;
+  align-items: center; justify-content: space-between;
+}
+.btn {
+  appearance: none; border: 1px solid var(--border); background: #fff;
+  color: var(--text); border-radius: 980px; padding: 8px 16px;
+  font: inherit; font-size: 14px; font-weight: 520; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn:hover { background: #f5f5f7; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #0077ed; }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.hero {
+  margin-bottom: 28px; padding-bottom: 22px; border-bottom: 1px solid var(--border);
+}
+.hero h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.03em; margin: 0 0 10px; font-weight: 700; }
+.hero p { color: var(--text-secondary); margin: 0 0 8px; max-width: var(--max-prose); }
+.badge {
+  display: inline-flex; align-items: center; font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border);
+  color: var(--text-secondary); background: #fff; margin-right: 6px; margin-bottom: 4px;
+}
+.badge.lec { border-color: #bfd7ff; color: #0058b0; background: #eef5ff; }
+.badge.sem { border-color: #c7e8d1; color: #0f6b2f; background: #eefbf2; }
+.badge.extra { border-color: #e2d4ff; color: #5b21b6; background: #f6f0ff; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 14px 16px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin: 18px 0; font-size: 13px;
+}
+.legend span { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; }
+.map-card, .card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; margin: 16px 0;
+}
+.map-list { margin: 8px 0 0; padding-left: 18px; color: var(--text-secondary); font-size: 14px; }
+.map-list li { margin: 4px 0; }
+.topic {
+  margin: 36px 0 48px; padding-top: 8px; scroll-margin-top: 20px;
+}
+.topic > h2 {
+  font-size: 26px; letter-spacing: -0.02em; margin: 0 0 6px; font-weight: 700;
+}
+.topic-meta { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+.block { margin: 18px 0; }
+.block h3 {
+  font-size: 15px; font-weight: 650; margin: 0 0 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.block h3 .n {
+  display: inline-flex; width: 22px; height: 22px; border-radius: 7px;
+  background: var(--accent-soft); color: var(--accent); font-size: 12px;
+  align-items: center; justify-content: center; font-weight: 700;
+}
+.block p, .block li { max-width: var(--max-prose); }
+.block p { margin: 0 0 10px; }
+.muted { color: var(--text-secondary); }
+.formula-box {
+  background: #fff; border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 16px; margin: 10px 0; overflow-x: auto;
+}
+.dims {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;
+}
+.dim-pill {
+  font-family: var(--mono); font-size: 12px; padding: 5px 10px;
+  border-radius: 8px; border: 1px solid var(--border); background: #fff;
+}
+.dim-pill.data { border-color: #cfcfd4; color: var(--data); }
+.dim-pill.weights { border-color: #9ec5f0; color: var(--weights); background: #f0f7ff; }
+.dim-pill.pred { border-color: #d4c4f7; color: var(--pred); background: #f7f2ff; }
+.dim-pill.loss { border-color: #f5c2cd; color: var(--loss); background: #fff1f4; }
+.dim-pill.grad { border-color: #f5c9a8; color: var(--grad); background: #fff6ef; }
+.steps { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; }
+.step {
+  display: none; padding: 14px 16px; border-top: 1px solid var(--border);
+}
+.step:first-child, .step.show { display: block; border-top: none; }
+.step.show + .step { border-top: 1px solid var(--border); }
+.step .why { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.steps-nav { display: flex; gap: 8px; padding: 10px 12px; background: #fafafa; border-top: 1px solid var(--border); }
+.num-ex {
+  border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff;
+}
+.num-ex .inputs { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.num-ex label { font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+.num-ex input[type=number], .num-ex input[type=text], .code-editor {
+  border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+  font-family: var(--mono); font-size: 13px; background: #fff; color: var(--text);
+  min-width: 72px;
+}
+.num-ex .trace { font-family: var(--mono); font-size: 13px; background: #f5f5f7;
+  border-radius: 10px; padding: 10px 12px; margin-top: 8px; white-space: pre-wrap; }
+.widget {
+  border: 1px solid var(--border); border-radius: var(--radius); background: #fff;
+  padding: 14px; margin: 12px 0;
+}
+.widget-title { font-weight: 650; font-size: 14px; margin: 0 0 4px; }
+.widget-hint { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+.widget-controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-bottom: 10px; }
+.widget-controls label { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.widget canvas, .widget svg { display: block; width: 100%; max-width: 560px; height: auto; touch-action: none; border-radius: 12px; background: #fafafa; border: 1px solid #eee; }
+.widget .readout { font-family: var(--mono); font-size: 13px; margin-top: 10px; color: var(--text); }
+.pitfalls { border-left: 3px solid var(--loss); padding: 4px 0 4px 14px; }
+.pitfalls li { margin: 6px 0; }
+.life { border-left: 3px solid var(--ok); padding: 4px 0 4px 14px; }
+.quiz { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff; margin: 10px 0; }
+.quiz .q { font-weight: 560; margin-bottom: 10px; }
+.quiz .opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz .opt {
+  text-align: left; border: 1px solid var(--border); background: #fff;
+  border-radius: 12px; padding: 10px 12px; cursor: pointer; font: inherit; font-size: 14px;
+}
+.quiz .opt:hover { border-color: var(--accent); }
+.quiz .opt.correct { border-color: var(--ok); background: #ecfdf3; }
+.quiz .opt.wrong { border-color: var(--loss); background: #fff1f4; }
+.quiz .feedback { margin-top: 10px; font-size: 14px; display: none; }
+.quiz .feedback.show { display: block; }
+.quiz input[type=number], .quiz input[type=text] {
+  border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+  font-family: var(--mono); width: 120px;
+}
+.spoiler {
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: #fff; margin-top: 8px;
+}
+.spoiler summary { cursor: pointer; font-weight: 560; font-size: 14px; }
+.cheat {
+  background: #f5f5f7; border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; font-size: 14px; margin-top: 8px;
+}
+.cheat code { color: var(--weights); }
+.table-map {
+  width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0;
+}
+.table-map th, .table-map td {
+  border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top;
+}
+.table-map th { background: #f5f5f7; font-weight: 600; }
+.code-cell { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; margin: 12px 0; }
+.code-cell .toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border); background: #fafafa; align-items: center;
+}
+.code-cell textarea {
+  width: 100%; min-height: 140px; border: 0; resize: vertical; padding: 12px 14px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.45; background: #fff; color: var(--text);
+}
+.code-cell .out {
+  border-top: 1px solid var(--border); padding: 10px 14px; font-family: var(--mono);
+  font-size: 12px; white-space: pre-wrap; background: #fbfbfd; min-height: 28px; color: var(--text-secondary);
+}
+.code-cell .out.ok { color: var(--ok); }
+.code-cell .out.err { color: var(--loss); }
+.fillblank {
+  border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #fff; margin: 12px 0;
+}
+.fillblank .prompt { font-family: var(--mono); font-size: 13px; background: #f5f5f7; padding: 12px; border-radius: 10px; white-space: pre-wrap; margin-bottom: 10px; }
+.fillblank .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pytorch-block { position: relative; }
+.copy-btn { position: absolute; top: 10px; right: 10px; }
+.mark-done {
+  margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.final-score { font-size: 18px; font-weight: 650; margin: 12px 0; }
+details.more { margin: 10px 0; }
+details.more > summary { cursor: pointer; color: var(--accent); font-weight: 560; }
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-105%); transition: transform .2s ease; }
+  .sidebar.open { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,.08); }
+  .main { margin-left: 0; padding: 20px 16px 64px; max-width: 100%; }
+  .topbar-mobile { display: flex; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 35; }
+  .overlay.show { display: block; }
+}
+@media (max-width: 420px) {
+  body { font-size: 15px; }
+  .hero h1 { font-size: 26px; }
+  .widget canvas { max-width: 100%; }
+}
+
+.bp-node { font-family: var(--mono); font-size: 12px; }
+.opt-legend { display:flex; flex-wrap:wrap; gap:10px 14px; font-size:12px; margin:8px 0; }
+.opt-legend span { display:inline-flex; align-items:center; gap:6px; }
+.opt-sw { width:14px; height:3px; border-radius:2px; display:inline-block; }
+.course-nav { font-size:13px; color:var(--text-secondary); margin-bottom:10px; }
+
+.norm-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; font-size:12px; margin:10px 0; }
+.norm-grid div { border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff; }
+.curve-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; margin:8px 0; color:var(--text-secondary); }
+
+.kernel-grid { display:inline-grid; grid-template-columns:repeat(3,42px); gap:4px; }
+.kernel-grid input { width:42px; padding:6px 4px; text-align:center; font-family:var(--mono); font-size:12px; border:1px solid var(--border); border-radius:8px; }
+.arch-table { width:100%; border-collapse:collapse; font-size:13px; }
+.arch-table th,.arch-table td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+.arch-table th { background:#f5f5f7; }
+
+.strat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+@media (max-width:520px){ .strat-grid { grid-template-columns:1fr; } }
+.heat-wrap { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+.heat-wrap canvas { max-width:200px !important; }
+.lr-legend { display:flex; flex-wrap:wrap; gap:12px; font-size:12px; margin:8px 0; color:var(--text-secondary); }
+.lr-legend i { display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:4px; }
+.iou-boxes { position:relative; width:100%; max-width:280px; height:200px; border:1px solid var(--border); border-radius:12px; background:#fafafa; }
+.iou-boxes .box { position:absolute; border:2px solid; border-radius:4px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+<div class="topbar-mobile"><strong>Модуль 4 · CV практика</strong>
+<button class="btn btn-sm" type="button" onclick="toggleNav()">Оглавление</button></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="course-pos">Курс DL · модуль 4 из 5</div>
+  <h1>CV на практике</h1>
+  <div class="progress-wrap"><div class="progress-bar"><span id="progressFill"></span></div>
+  <div class="progress-label"><span id="progressText">0</span> / <span id="progressTotal">0</span> тем</div></div>
+  <ul class="toc" id="toc"></ul>
+</aside>
+<main class="main" id="main">
+
+<section class="hero" id="intro">
+  <p class="course-nav"><a href="module3-cnn.html">← Модуль 3</a> · Модуль 4 · <span class="muted">Модуль 5 →</span></p>
+  <h1>Модуль 4. Компьютерное зрение на практике</h1>
+  <p>Свой Dataset, лестница экспериментов с ResNet18, fine-tuning, schedulers, МРТ-домен и XAI — семинар 4 и конец лекции III.</p>
+  <p class="muted">Оценка времени: <strong style="color:var(--text)">3.5–4.5 часа</strong>.</p>
+</section>
+<div class="legend">
+  <span><i class="swatch" style="background:var(--data)"></i> данные</span>
+  <span><i class="swatch" style="background:var(--weights)"></i> веса / lr</span>
+  <span><i class="swatch" style="background:var(--pred)"></i> предсказание / карта</span>
+  <span><i class="swatch" style="background:var(--loss)"></i> loss</span>
+  <span><i class="swatch" style="background:var(--grad)"></i> градиент / attribution</span>
+  <span><i class="swatch" style="background:var(--ok)"></i> верно</span>
+</div>
+<div class="map-card"><strong>Карта модуля</strong>
+<ol class="map-list">
+<li><a href="#t-ds">Свой Dataset / ImageFolder</a></li>
+<li><a href="#t-tf">Трансформы ImageNet</a></li>
+<li><a href="#t-ladder">Лестница экспериментов</a> + стратегия</li>
+<li><a href="#t-ft">Fine-tuning</a> (fc, dual lr, BN)</li>
+<li><a href="#t-sched">LR schedulers</a></li>
+<li><a href="#t-mri">МРТ-домен</a></li>
+<li><a href="#t-xai">XAI методы</a></li>
+<li><a href="#t-map">Карта важности</a> (виджет)</li>
+<li><a href="#t-cv">Задачи CV</a> (IoU, U-Net)</li>
+<li><a href="#t-final">Мини-тест</a></li>
+</ol></div>
+
+<section class="topic" id="t-ds" data-topic="ds">
+  <h2>1. Свой Dataset и ImageFolder</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>CIFAR лежит в torchvision «из коробки». Реальные картинки — папки на диске: нужен <em>Dataset</em> с <code>__len__</code> / <code>__getitem__</code>, либо готовый <code>ImageFolder</code>.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 520 130" width="100%" style="max-width:520px">
+        <rect x="10" y="20" width="90" height="90" rx="8" fill="#f5f5f7" stroke="#d2d2d7"/>
+        <text x="55" y="45" text-anchor="middle" font-size="11" fill="#6e6e73">PokemonData/</text>
+        <text x="55" y="68" text-anchor="middle" font-size="10" fill="#0071e3">Pikachu/</text>
+        <text x="55" y="86" text-anchor="middle" font-size="10" fill="#0071e3">Charmander/</text>
+        <text x="55" y="104" text-anchor="middle" font-size="10" fill="#6e6e73">… 150</text>
+        <text x="130" y="70" font-size="18" fill="#6e6e73">→</text>
+        <rect x="160" y="35" width="140" height="60" rx="8" fill="#f0f7ff" stroke="#0071e3"/>
+        <text x="230" y="60" text-anchor="middle" font-size="11" fill="#0071e3">PokemonDataset</text>
+        <text x="230" y="78" text-anchor="middle" font-size="10" fill="#6e6e73">files + labels</text>
+        <text x="330" y="70" font-size="18" fill="#6e6e73">→</text>
+        <rect x="360" y="35" width="140" height="60" rx="8" fill="#f7f2ff" stroke="#7c3aed"/>
+        <text x="430" y="60" text-anchor="middle" font-size="11" fill="#7c3aed">(img, y)</text>
+        <text x="430" y="78" text-anchor="middle" font-size="10" fill="#6e6e73">3×224×224, int</text>
+      </svg>
+    </div>
+    <p class="muted">≈ 7 тыс. jpg, 150 классов; svg пропускаем. Делим <strong>внутри каждого класса</strong> 75/25, чтобы в тесте были все покемоны.</p>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p><code>Dataset</code>: контейнер пар (вход, метка). <code>DataLoader</code> батчит и перемешивает. <code>ImageFolder(root)</code> сам берёт имена классов из подпапок.</p>
+    <div class="dims">
+      <span class="dim-pill data">path → PIL RGB</span>
+      <span class="dim-pill weights">label: int ∈ {0..C−1}</span>
+      <span class="dim-pill pred">после transform: (C,H,W)</span>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="ds">
+      <div class="step show"><strong>1.</strong> <code>classes = sorted(подпапки)</code> — порядок задаёт номер класса.<div class="why">Иначе метки «прыгают» между запусками.</div></div>
+      <div class="step"><strong>2.</strong> Для каждого класса: список jpg → <code>train_test_split(..., random_state=42)</code>.<div class="why">Stratify по классам «вручную».</div></div>
+      <div class="step"><strong>3.</strong> <code>__getitem__</code>: открыть / взять из RAM → <code>transform</code> → <code>(tensor, label)</code>.<div class="why"><code>load_to_ram=True</code> ускоряет эпохи на маленьком датасете.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('ds')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('ds')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex">
+      <p>150 классов × ≈45 картинок ≈ 6750 файлов. Train 75% ≈ 5062, test ≈ 1688.</p>
+      <div class="trace" id="dsTrace">классов: 150 | train≈5062 | test≈1688 | ImageFolder на MRI Training/ тоже работает</div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Сколько файлов попадёт в train?</p>
+      <p class="widget-hint">Попробуйте: n_per_class=40, test_size=0.25 → train 30 на класс; смените test_size.</p>
+      <div class="widget-controls">
+        <label>классов <input type="number" id="ds-c" value="150" min="1" max="500"></label>
+        <label>jpg / класс <input type="number" id="ds-n" value="45" min="2" max="200"></label>
+        <label>test_size <input type="number" id="ds-t" value="0.25" min="0.05" max="0.5" step="0.05"></label>
+      </div>
+      <div class="readout" id="dsOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+    <div class="pytorch-block">
+      <button class="btn btn-sm copy-btn" type="button" onclick="copyPre(this)">Скопировать</button>
+<pre><code>class PokemonDataset(Dataset):
+    def __init__(self, root, train=True, transform=None, test_size=0.25):
+        self.classes = sorted(d for d in os.listdir(root)
+                              if os.path.isdir(os.path.join(root, d)))
+        self.files, self.labels = [], []
+        for y, name in enumerate(self.classes):
+            names = sorted(f for f in os.listdir(os.path.join(root, name))
+                           if f.endswith('jpg'))
+            tr, te = train_test_split(names, test_size=test_size, random_state=42)
+            pick = tr if train else te
+            self.files += [os.path.join(root, name, f) for f in pick]
+            self.labels += [y] * len(pick)
+        self.transform = transform
+    def __len__(self): return len(self.files)
+    def __getitem__(self, i):
+        img = Image.open(self.files[i]).convert('RGB')
+        if self.transform: img = self.transform(img)
+        return img, self.labels[i]
+
+# Готовые папки-классы:
+# ds = datasets.ImageFolder('mri/Training', transform=tf)
+</code></pre>
+    </div>
+    <table class="table-map">
+      <tr><th>Идея</th><th>Код</th></tr>
+      <tr><td>номер класса</td><td><code>enumerate(sorted(dirs))</code></td></tr>
+      <tr><td>split внутри класса</td><td><code>train_test_split(names, random_state=42)</code></td></tr>
+      <tr><td>готовые папки</td><td><code>ImageFolder(root)</code></td></tr>
+    </table>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Случайный split по всем файлам → часть классов пропадёт из теста.</li>
+      <li>Забыть <code>.convert('RGB')</code> → у PNG с альфой 4 канала, ResNet упадёт.</li>
+      <li>Разный порядок папок на Windows/Linux без <code>sorted</code> → метки съедут.</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Антифрод: скриншоты документов по папкам-типам; продукт: фото офферов с витрины.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-ds"><div class="q">Зачем делить train/test внутри каждого класса?</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">чтобы в тесте были все 150 классов</button>
+        <button type="button" class="opt" data-ok="0">чтобы ускорить ImageFolder</button>
+        <button type="button" class="opt" data-ok="0">BatchNorm так требует</button>
+      </div>
+      <div class="feedback" data-explain-ok="Иначе редкие классы могут целиком уйти в train." data-explain-bad="Смотрите split по папкам."></div>
+    </div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Dataset — договор «по индексу верни (x, y)»; ImageFolder — частный случай, когда y = имя папки.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Свой Dataset: <code>__len__</code>/<code>__getitem__</code>, split внутри класса. Готовые папки → <code>ImageFolder</code>.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('ds')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-tf" data-topic="tf">
+  <h2>2. Трансформы под ImageNet</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Предобученный ResNet ждёт те же препроцессинг, что на ImageNet: 224×224 и нормализацию mean/std. Иначе fine-tuning «бьётся» с чужим распределением входов.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 540 100" width="100%" style="max-width:540px">
+        <rect x="8" y="25" width="70" height="50" rx="6" fill="#e8e8ed"/><text x="43" y="55" text-anchor="middle" font-size="10">raw</text>
+        <text x="95" y="55" font-size="14">→</text>
+        <rect x="115" y="20" width="80" height="60" rx="6" fill="#f0f7ff" stroke="#0071e3"/><text x="155" y="48" text-anchor="middle" font-size="10" fill="#0071e3">Resize</text><text x="155" y="64" text-anchor="middle" font-size="9" fill="#0071e3">256</text>
+        <text x="210" y="55" font-size="14">→</text>
+        <rect x="230" y="25" width="80" height="50" rx="6" fill="#f0f7ff" stroke="#0071e3"/><text x="270" y="48" text-anchor="middle" font-size="10" fill="#0071e3">CenterCrop</text><text x="270" y="64" text-anchor="middle" font-size="9" fill="#0071e3">224</text>
+        <text x="325" y="55" font-size="14">→</text>
+        <rect x="345" y="25" width="70" height="50" rx="6" fill="#f7f2ff" stroke="#7c3aed"/><text x="380" y="55" text-anchor="middle" font-size="10" fill="#7c3aed">ToTensor</text>
+        <text x="430" y="55" font-size="14">→</text>
+        <rect x="450" y="25" width="80" height="50" rx="6" fill="#fff6ef" stroke="#ea580c"/><text x="490" y="48" text-anchor="middle" font-size="10" fill="#ea580c">Normalize</text><text x="490" y="64" text-anchor="middle" font-size="8" fill="#ea580c">ImageNet</text>
+      </svg>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>$\tilde x_c = (x_c - \mu_c)/\sigma_c$, где $\mu=[0.485,0.456,0.406]$, $\sigma=[0.229,0.224,0.225]$ (каналы RGB, значения после ToTensor в $[0,1]$).</p>
+    <div class="dims">
+      <span class="dim-pill data">PIL → Resize/Crop</span>
+      <span class="dim-pill pred">ToTensor: (3,224,224) ∈ [0,1]</span>
+      <span class="dim-pill weights">Normalize → ~N(0,1)-ish</span>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="tf">
+      <div class="step show"><strong>1.</strong> <code>Resize(256)</code> — меньшая сторона = 256, пропорции сохранены.<div class="why">Единый масштаб до кропа.</div></div>
+      <div class="step"><strong>2.</strong> Test: <code>CenterCrop(224)</code>. Train (с аугментациями): часто <code>RandomResizedCrop(224)</code> + Flip.<div class="why">Детерминизм на тесте.</div></div>
+      <div class="step"><strong>3.</strong> <code>ToTensor</code> + <code>Normalize(mean, std)</code> ImageNet.<div class="why">Совместимость с pretrained weights.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('tf')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('tf')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex">
+      <p>Пиксель R=0.485 после ToTensor: $z=(0.485-0.485)/0.229=0$. Пиксель R=1: $z\approx 2.25$.</p>
+      <div class="inputs">
+        <label>R ∈ [0,1]<input type="number" id="tf-r" value="0.8" min="0" max="1" step="0.01"></label>
+        <label>G<input type="number" id="tf-g" value="0.5" min="0" max="1" step="0.01"></label>
+        <label>B<input type="number" id="tf-b" value="0.2" min="0" max="1" step="0.01"></label>
+      </div>
+      <div class="trace" id="tfTrace"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Train vs test пайплайн</p>
+      <p class="widget-hint">Включите аугментации — на test они должны исчезнуть.</p>
+      <div class="widget-controls">
+        <label><input type="checkbox" id="tf-aug" checked> RandomCrop/Flip на train</label>
+        <label><input type="checkbox" id="tf-rot"> RandomRotation(10)</label>
+      </div>
+      <div class="readout" id="tfOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code>normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
+                        std=[0.229, 0.224, 0.225])
+test_tf = T.Compose([
+    T.Resize(256), T.CenterCrop(224), T.ToTensor(), normalize])
+train_tf = T.Compose([
+    T.RandomResizedCrop(224), T.RandomHorizontalFlip(),
+    T.ToTensor(), normalize])
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Normalize <em>до</em> ToTensor (PIL 0..255) — неверные μ/σ.</li>
+      <li>Аугментации на val/test → метрики шумят и завышены.</li>
+      <li>Два ImageFolder на одни файлы: для train/val нужны <em>разные</em> transform + непересекающиеся <code>Subset</code>.</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Единый preprocess в inference-сервисе = тот же, что при обучении pretrained.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-tf"><div class="q">Какой размер ждёт ResNet18 ImageNet?</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">3×224×224</button>
+        <button type="button" class="opt" data-ok="0">3×32×32</button>
+        <button type="button" class="opt" data-ok="0">1×256×256</button>
+      </div>
+      <div class="feedback" data-explain-ok="Стандарт torchvision." data-explain-bad="CIFAR — 32; ResNet ImageNet — 224."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Resize(256) → CenterCrop(224) → ToTensor → Normalize(ImageNet). Аугментации только на train.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('tf')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-ladder" data-topic="ladder">
+  <h2>3. Лестница экспериментов</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Один «магический» run не говорит, что помогло. Лестница: простая CNN → ResNet18 с нуля → +aug → full FT → только голова — показывает вклад архитектуры, данных и pretrained.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 520 140" width="100%" style="max-width:520px" id="ladderSvg">
+        <text x="10" y="20" font-size="12" fill="#6e6e73">типичный порядок качества (малые данные, домен ≈ ImageNet)</text>
+        <rect x="20" y="100" width="70" height="28" rx="6" fill="#e8e8ed"/><text x="55" y="118" text-anchor="middle" font-size="9">simple</text>
+        <rect x="110" y="88" width="70" height="40" rx="6" fill="#e8e8ed"/><text x="145" y="112" text-anchor="middle" font-size="9">R18 scratch</text>
+        <rect x="200" y="72" width="70" height="56" rx="6" fill="#f0f7ff" stroke="#0071e3"/><text x="235" y="104" text-anchor="middle" font-size="9" fill="#0071e3">+ aug</text>
+        <rect x="290" y="40" width="90" height="88" rx="6" fill="#ecfdf3" stroke="#16a34a"/><text x="335" y="88" text-anchor="middle" font-size="10" fill="#16a34a">full FT</text>
+        <rect x="400" y="55" width="90" height="73" rx="6" fill="#f7f2ff" stroke="#7c3aed"/><text x="445" y="95" text-anchor="middle" font-size="10" fill="#7c3aed">head-only</text>
+      </svg>
+      <p class="muted" style="margin:8px 0 0">Наибольший скачок обычно даёт переход к предобученным весам (full FT). Большая сеть с нуля без aug почти не лучше маленькой.</p>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <table class="table-map">
+      <tr><th>Эксперимент</th><th>Веса</th><th>Что учим</th></tr>
+      <tr><td>1. simple CNN</td><td>random</td><td>все</td></tr>
+      <tr><td>2. ResNet18 scratch</td><td>random, 150 classes</td><td>все</td></tr>
+      <tr><td>3. + аугментации</td><td>random</td><td>все</td></tr>
+      <tr><td>4. fine-tuning целиком</td><td>ImageNet</td><td>все, малый lr</td></tr>
+      <tr><td>5. только голова</td><td>ImageNet, body freeze</td><td>только <code>fc</code></td></tr>
+    </table>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="lad">
+      <div class="step show"><strong>1.</strong> Зафиксируйте эпохи, оптимизатор-семейство и split — меняйте <em>один</em> фактор.<div class="why">Иначе нельзя объяснить рост accuracy.</div></div>
+      <div class="step"><strong>2.</strong> Сравните scratch vs pretrained при одинаковых aug.<div class="why">Отделяете архитектуру от инициализации.</div></div>
+      <div class="step"><strong>3.</strong> Если данных ещё меньше — head-only или эмбеддинги + линейный классификатор (семинар 5).<div class="why">Меньше trainable params → меньше переобучение.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('lad')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('lad')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой ориентир</h3>
+    <p>ResNet18 ≈ 11M параметров; простая CNN семинара — десятки тысяч. На ~7k картинках 150 классов большая сеть с нуля легко переобучается: train↑, test≈simple.</p>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив: «что будет, если…»</h3>
+    <div class="widget">
+      <p class="widget-title">Стратегия по объёму данных и близости домена</p>
+      <p class="widget-hint">Попробуйте: мало данных + далёкий домен; много данных + близкий к ImageNet.</p>
+      <div class="strat-grid">
+        <label>Объём данных
+          <select id="st-data">
+            <option value="tiny">очень мало (&lt;1k)</option>
+            <option value="small" selected>мало (1–10k)</option>
+            <option value="med">средне (10–100k)</option>
+            <option value="large">много (&gt;100k)</option>
+          </select>
+        </label>
+        <label>Домен vs ImageNet
+          <select id="st-dom">
+            <option value="close" selected>близкий (фото объектов)</option>
+            <option value="mid">средне (стиль/камера)</option>
+            <option value="far">далёкий (МРТ, схемы)</option>
+          </select>
+        </label>
+      </div>
+      <div class="readout" id="stOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code># 2. scratch
+model = resnet18(num_classes=150)  # weights=None
+# 4. full FT
+model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+model.fc = nn.Linear(model.fc.in_features, 150)
+# 5. head-only
+for p in model.parameters(): p.requires_grad = False
+for p in model.fc.parameters(): p.requires_grad = True
+opt = torch.optim.SGD(model.fc.parameters(), lr=0.01, momentum=0.9)
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Сравнивать FT без Normalize ImageNet с scratch на «сырых» пикселях.</li>
+      <li>Тюнить эпохи по тому же «тесту», которым хвастаетесь (нужен val).</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>A/B моделей в продукте: сначала pretrained baseline, потом aug/FT — не наоборот.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-lad"><div class="q">Что обычно даёт наибольший скачок на малых данных?</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">предобученные веса (особенно full FT)</button>
+        <button type="button" class="opt" data-ok="0">только увеличить ResNet с нуля</button>
+        <button type="button" class="opt" data-ok="0">убрать Normalize</button>
+      </div>
+      <div class="feedback" data-explain-ok="Как в ответе семинара." data-explain-bad="Архитектура без pretrained на малых данных слабее."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Лестница: simple → R18 scratch → +aug → full FT → head. Главный рычаг на малых данных — pretrained.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('ladder')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-ft" data-topic="ft">
+  <h2>4. Fine-tuning: fc, группы параметров, dual lr</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span> <span class="badge extra">сверх курса</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Голова ImageNet на 1000 классов нам не нужна. Меняем <code>model.fc</code>, решаем что разморозить и с каким <code>lr</code>: тело уже «умеет видеть», голова учится с нуля.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 480 110" width="100%" style="max-width:480px">
+        <rect x="20" y="25" width="200" height="60" rx="8" fill="#f0f7ff" stroke="#0071e3"/>
+        <text x="120" y="50" text-anchor="middle" font-size="12" fill="#0071e3">body (features)</text>
+        <text x="120" y="68" text-anchor="middle" font-size="10" fill="#0071e3">малый lr, напр. 1e-4</text>
+        <text x="240" y="55" font-size="18">→</text>
+        <rect x="270" y="25" width="180" height="60" rx="8" fill="#f7f2ff" stroke="#7c3aed"/>
+        <text x="360" y="50" text-anchor="middle" font-size="12" fill="#7c3aed">fc: 512→C</text>
+        <text x="360" y="68" text-anchor="middle" font-size="10" fill="#7c3aed">больший lr, напр. 1e-3</text>
+      </svg>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>ResNet18: <code>fc</code> был <code>Linear(512, 1000)</code> → <code>Linear(512, C)</code>. Trainable params = сумма <code>p.numel()</code> с <code>requires_grad=True</code>.</p>
+    <div class="dims">
+      <span class="dim-pill data">features: (N,512)</span>
+      <span class="dim-pill weights">fc.weight: (C,512)</span>
+      <span class="dim-pill pred">logits: (N,C)</span>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="ft">
+      <div class="step show"><strong>1.</strong> Загрузить weights ImageNet, заменить <code>fc</code>.<div class="why">Новая голова — случайная инициализация.</div></div>
+      <div class="step"><strong>2.</strong> Либо учить всё одним <code>lr</code>, либо <code>param_groups</code>: body / head с разными <code>lr</code>.<div class="why">Не сбить низкоуровневые фильтры большим шагом.</div></div>
+      <div class="step"><strong>3.</strong> Head-only: freeze all → unfreeze <code>fc</code>; в optimizer только <code>model.fc.parameters()</code>.<div class="why">Меньше памяти и графа.</div></div>
+      <div class="step"><strong>4.</strong> Тонкость BN: при <code>model.train()</code> замороженный BatchNorm всё ещё обновляет running mean/var. Для «камня» — <code>eval()</code> на замороженных модулях.<div class="why">Иначе статистика BN уезжает на маленький домен.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('ft')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('ft')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <div class="num-ex">
+      <p>C=150: голова $512\cdot150+150=76950$ параметров. На МРТ: часто размораживают <code>layer4</code>+<code>fc</code>.</p>
+      <div class="inputs">
+        <label>C<input type="number" id="ft-c" value="150" min="2" max="1000"></label>
+        <label>in_features<input type="number" id="ft-in" value="512" min="64" max="4096"></label>
+      </div>
+      <div class="trace" id="ftTrace"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Режим дообучения</p>
+      <p class="widget-hint">Переключите full / head / layer4+fc — смотрите, что попадает в optimizer.</p>
+      <div class="widget-controls">
+        <label>режим
+          <select id="ft-mode">
+            <option value="full">full FT (все параметры)</option>
+            <option value="head">только fc</option>
+            <option value="l4">layer4 + fc</option>
+            <option value="dual">dual lr: body 1e-4, head 1e-3</option>
+          </select>
+        </label>
+      </div>
+      <div class="readout" id="ftOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code>model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+model.fc = nn.Linear(model.fc.in_features, n_classes)
+
+# dual lr
+opt = torch.optim.Adam([
+    {'params': [p for n,p in model.named_parameters() if not n.startswith('fc')], 'lr': 1e-4},
+    {'params': model.fc.parameters(), 'lr': 1e-3},
+])
+
+# BN «камень» при freeze:
+model.eval()
+for m in model.fc.modules():
+    if isinstance(m, nn.Linear): m.train()  # голова в train
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Freeze весов, но забыть отфильтровать <code>requires_grad</code> в optimizer — «пустые» группы.</li>
+      <li>Считать, что <code>requires_grad=False</code> останавливает BN running stats — нет.</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Дообучение OCR/ID-модели банка: dual lr — стандарт, чтобы не стереть ImageNet-фильтры.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="fillblank">
+      <div class="prompt">fc: Linear(512, 150) → params = ?</div>
+      <div class="row"><input type="number" id="ans-76950"><button class="btn btn-sm" type="button" onclick="checkFill('76950',76950)">Проверить</button>
+      <span id="fb-76950" style="display:none"></span></div>
+    </div>
+    <div class="quiz" data-quiz="q-ft"><div class="q">Замороженный BN при model.train()…</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">может обновлять running mean/var</button>
+        <button type="button" class="opt" data-ok="0">полностью застывает автоматически</button>
+        <button type="button" class="opt" data-ok="0">удаляет γ, β</button>
+      </div>
+      <div class="feedback" data-explain-ok="Нужен eval() на замороженной части." data-explain-bad="requires_grad ≠ running stats."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat"><code>model.fc = Linear(512,C)</code>; param_groups / dual lr; freeze ≠ BN eval.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('ft')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-sched" data-topic="sched">
+  <h2>5. Learning rate schedulers</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span> <span class="badge extra">сверх курса</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>В начале полезен большой шаг, ближе к концу — маленький. Scheduler меняет <code>lr</code> по правилу; optimizer решает <em>куда</em>, scheduler — <em>насколько</em>.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Step — ступеньки вниз; Cosine — плавная дуга до ~0; warmup — разгон с малого lr (стабильность больших батчей / трансформеров); OneCycle — вверх и вниз за один цикл эпох.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">
+      <p>StepLR: $\eta_{t}=\eta_0\cdot\gamma^{\lfloor t/\text{step}\rfloor}$</p>
+      <p>CosineAnnealing: $\eta_t=\eta_{\min}+\frac12(\eta_0-\eta_{\min})\big(1+\cos(\pi t/T_{\max})\big)$</p>
+      <p>Warmup (линейный): $\eta_t=\eta_{\text{peak}}\cdot t/W$ при $t&lt;W$, далее cosine/const.</p>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="sch">
+      <div class="step show"><strong>1.</strong> Создать optimizer с начальным <code>lr</code>.<div class="why">Scheduler читает param_groups.</div></div>
+      <div class="step"><strong>2.</strong> После <code>optimizer.step()</code> (обычно раз в эпоху) вызвать <code>scheduler.step()</code>.<div class="why">Порядок важен; у OneCycle — часто раз в batch.</div></div>
+      <div class="step"><strong>3.</strong> Логировать <code>opt.param_groups[0]['lr']</code>.<div class="why">Иначе «lr не падает» незаметно.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('sch')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('sch')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Числовой пример</h3>
+    <p>StepLR($\eta=0.01$, step=5, $\gamma=0.3$), эпохи 0..14: lr = 0.01 до эпохи 4, затем 0.003, затем 0.0009.</p>
+    <div class="fillblank">
+      <div class="prompt">После 2 ступенек: 0.01 × 0.3² = ?</div>
+      <div class="row"><input type="number" id="ans-0009" step="0.0001"><button class="btn btn-sm" type="button" onclick="checkFill('0009',0.0009)">Проверить</button>
+      <span id="fb-0009" style="display:none"></span></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Кривые расписаний</p>
+      <p class="widget-hint">Сравните Step, Cosine, Warmup+Cosine, OneCycle. Поменяйте T_max / warmup.</p>
+      <div class="widget-controls">
+        <label>epochs <input type="number" id="lr-ep" value="15" min="5" max="50"></label>
+        <label>warmup <input type="number" id="lr-wu" value="3" min="0" max="20"></label>
+        <label>base lr <input type="number" id="lr-base" value="0.01" min="0.0001" max="0.1" step="0.001"></label>
+      </div>
+      <div class="lr-legend">
+        <span><i style="background:#0071e3"></i>Cosine</span>
+        <span><i style="background:#ea580c"></i>StepLR</span>
+        <span><i style="background:#7c3aed"></i>Warmup+Cosine</span>
+        <span><i style="background:#16a34a"></i>OneCycle</span>
+      </div>
+      <canvas id="lrCanvas" width="560" height="220"></canvas>
+      <div class="readout" id="lrOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code>sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=num_epochs)
+# StepLR(opt, step_size=5, gamma=0.3)
+# OneCycleLR(opt, max_lr=0.01, steps_per_epoch=len(loader), epochs=num_epochs)
+for epoch in range(num_epochs):
+    train_epoch(...); opt.step(); sched.step()
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Вызвать <code>scheduler.step()</code> до первого forward (устаревший warning у старых API).</li>
+      <li>OneCycle с step на эпоху вместо batch — кривая «ломается».</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>LLM: AdamW + warmup; CV fine-tune: Cosine — дефолт семинара.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-sch"><div class="q">CosineAnnealingLR к концу T_max стремится к</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">η_min (часто ≈ 0)</button>
+        <button type="button" class="opt" data-ok="0">η₀ × 2</button>
+        <button type="button" class="opt" data-ok="0">постоянному 1.0</button>
+      </div>
+      <div class="feedback" data-explain-ok="Плавный спуск по косинусу." data-explain-bad="Смотрите формулу cosine."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Step / Cosine / Warmup / OneCycle. <code>scheduler.step()</code> после обновления весов (или per-batch для OneCycle).</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('sched')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-mri" data-topic="mri">
+  <h2>6. Другой домен: МРТ</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Покемоны ≈ фото ImageNet. МРТ — серые срезы, 4 класса опухолей. Проверяем: помогут ли pretrained-края/текстуры, и <em>чему</em> верить кроме accuracy.</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Высокая accuracy может означать «читерство»: сеть смотрит на рамку сканера, больничный watermark, разный контраст аппарата — а не на опухоль. XAI и правильный split ловят это.</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p>4 класса: glioma / meningioma / pituitary / no tumor. Данные через <code>ImageFolder</code>; серый снимок → 3 одинаковых канала (ResNet ждёт RGB).</p>
+    <div class="dims">
+      <span class="dim-pill data">ImageFolder → RGB</span>
+      <span class="dim-pill pred">logits (N,4)</span>
+      <span class="dim-pill loss">CE + accuracy ≠ доверие</span>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам</h3>
+    <div class="steps" data-steps="mri">
+      <div class="step show"><strong>1.</strong> Два ImageFolder на Training: с aug и без; <code>Subset</code> с непересекающимися индексами для train/val.<div class="why">Иначе aug попадёт на val.</div></div>
+      <div class="step"><strong>2.</strong> Testing не трогать до финала.<div class="why">Нет утечки выбора гиперпараметров.</div></div>
+      <div class="step"><strong>3.</strong> FT: часто unfreeze <code>layer4</code>+<code>fc</code> (домен далёкий).<div class="why">Низкие слои универсальны, верхние — под задачу.</div></div>
+      <div class="step"><strong>4.</strong> Смотреть confusion / XAI: область опухоли или край кадра?<div class="why">Accuracy без локализации — ложное спокойствие.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('mri')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('mri')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Утечки и смещения</h3>
+    <ul class="pitfalls">
+      <li><strong>Patient leakage:</strong> срезы одного пациента в train и test → завышенная метрика.</li>
+      <li><strong>Scanner bias:</strong> класс коррелирует с аппаратом/больницей.</li>
+      <li><strong>Preprocess leakage:</strong> нормализация статистики по всему датасету включая test.</li>
+      <li><strong>Label leakage:</strong> в кадре видны аннотации/стрелки врача.</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Почему accuracy недостаточна?</p>
+      <p class="widget-hint">Выберите сценарий — увидите риск.</p>
+      <div class="widget-controls">
+        <label>сценарий
+          <select id="mri-sc">
+            <option value="acc">accuracy 95%, карта на рамке</option>
+            <option value="pat">срезы пациента в train и test</option>
+            <option value="ok">карта на опухоли, split по пациентам</option>
+            <option value="imb">accuracy 90% при 90% одного класса</option>
+          </select>
+        </label>
+      </div>
+      <div class="readout" id="mriOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code>full_train = datasets.ImageFolder('mri/Training', transform=mri_train_tf)
+full_val   = datasets.ImageFolder('mri/Training', transform=mri_eval_tf)
+perm = torch.randperm(len(full_train), generator=g).tolist()
+n_val = len(perm)//10
+train_ds = Subset(full_train, perm[n_val:]); val_ds = Subset(full_val, perm[:n_val])
+
+model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+model.fc = nn.Linear(model.fc.in_features, 4)
+for p in model.parameters(): p.requires_grad = False
+for p in list(model.layer4.parameters())+list(model.fc.parameters()):
+    p.requires_grad = True
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Один ImageFolder с aug на Training и взять val из него же теми же индексами с aug.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>МедML и финтех KYC: метрика без анализа ошибок/объяснений — регуляторный риск.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-mri"><div class="q">Patient leakage — это</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">данные одного пациента в train и test</button>
+        <button type="button" class="opt" data-ok="0">слишком большой batch size</button>
+        <button type="button" class="opt" data-ok="0">отсутствие Dropout</button>
+      </div>
+      <div class="feedback" data-explain-ok="Модель запоминает пациента, не болезнь." data-explain-bad="Утечка по субъекту."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">МРТ: ImageFolder, FT layer4+fc. Accuracy ≠ доверие; ловите leakage и читерство через XAI.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('mri')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-xai" data-topic="xai">
+  <h2>7. Объяснимость (XAI): методы</h2>
+  <div class="topic-meta"><span class="badge sem">из семинара</span> <span class="badge lec">из лекции</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Модель выдаёт класс, но не «почему». Attribution присваивает каждому пикселю вклад в логит выбранного класса — так ловят читерство (подпись, фон, край кадра).</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <p>Градиентные методы — быстрый обратный проход. Возмущения (occlusion) — медленнее, но интуитивны. Ни один метод не «истина»: смотрите несколько и sanity-check на известных объектах (котёнок слева / щенок справа).</p></div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <div class="formula-box">
+      <p><strong>Saliency:</strong> $\displaystyle\left|\frac{\partial f_c(x)}{\partial x}\right|$ — шумная «крапинка», страдает от насыщения.</p>
+      <p><strong>Deconv:</strong> через ReLU пропускает только положительный входящий градиент (игнор знака активации).</p>
+      <p><strong>Guided Backprop:</strong> нужно и $z&gt;0$, и входящий grad $&gt;0$ — чистые контуры, но слабо зависят от весов.</p>
+      <p><strong>CAM / Grad-CAM:</strong>
+      $$L^c=\mathrm{ReLU}\Big(\sum_k \alpha_k^c A^k\Big),\quad
+      \alpha_k^c=\frac1Z\sum_{i,j}\frac{\partial y^c}{\partial A^k_{ij}}$$
+      карта «пятнами» (у ResNet18 layer4: 7×7 → upsample).</p>
+      <p><strong>Guided Grad-CAM:</strong> поэлементное произведение Guided BP × Grad-CAM.</p>
+      <p><strong>Integrated Gradients:</strong>
+      $$\mathrm{IG}_i(x)=(x_i-x_i^0)\int_0^1 \frac{\partial f(x^0+\alpha(x-x^0))}{\partial x_i}\,d\alpha$$
+      baseline $x^0$ (чёрный); лечит насыщение; ~$n$ обратных проходов.</p>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам Grad-CAM</h3>
+    <div class="steps" data-steps="xai">
+      <div class="step show"><strong>1.</strong> Forward до выбранного слоя → карты $A^k$.<div class="why">Семантика «где» живёт в глубоких feature maps.</div></div>
+      <div class="step"><strong>2.</strong> Backward логита класса → усреднить градиент по H×W → веса $\alpha_k$.<div class="why">Важность канала для класса $c$.</div></div>
+      <div class="step"><strong>3.</strong> $\mathrm{ReLU}(\sum_k \alpha_k A^k)$, интерполировать до размера входа.<div class="why">Только положительный вклад в класс.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('xai')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('xai')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5</span> Сравнение</h3>
+    <table class="table-map">
+      <tr><th>Метод</th><th>Что видно</th><th>Шум / риск</th></tr>
+      <tr><td>Saliency</td><td>чувствительные пиксели</td><td>крапинка, насыщение</td></tr>
+      <tr><td>Guided BP</td><td>контуры</td><td>мало зависит от класса/весов</td></tr>
+      <tr><td>Grad-CAM</td><td>область объекта</td><td>грубое пятно 7×7</td></tr>
+      <tr><td>Guided Grad-CAM</td><td>детали в области</td><td>наследует минусы обоих</td></tr>
+      <tr><td>IG</td><td>пиксели вдоль пути</td><td>медленнее; выбор baseline</td></tr>
+    </table>
+  </div>
+  <div class="block"><h3><span class="n">6</span> Числовой мини-пример IG</h3>
+    <div class="num-ex">
+      <p>1D: $f(x)=x^2$, $x=2$, baseline $x^0=0$. $\mathrm{IG}=(2-0)\int_0^1 2(\alpha\cdot2)\,d\alpha=2\cdot[2\alpha^2]_0^1=4$, и $f(2)-f(0)=4$.</p>
+      <div class="inputs">
+        <label>x<input type="number" id="ig-x" value="2" step="0.1"></label>
+        <label>x0<input type="number" id="ig-x0" value="0" step="0.1"></label>
+      </div>
+      <div class="trace" id="igTrace"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код (Captum)</h3>
+<pre><code>from captum.attr import Saliency, LayerGradCam, IntegratedGradients, LayerAttribution
+a = Saliency(model).attribute(x, target=cls).abs().mean(1)
+a = LayerGradCam(model, model.layer4).attribute(x, target=cls)
+a = LayerAttribution.interpolate(torch.relu(a), x.shape[2:])
+a = IntegratedGradients(model).attribute(x, baselines=black, target=cls, n_steps=50)
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls">
+      <li>Красивая карта Guided BP ≠ верное объяснение класса.</li>
+      <li>ReLU(inplace=True) ломает Captum — выключить inplace.</li>
+      <li>Большой convergence delta у IG → увеличить <code>n_steps</code>.</li>
+    </ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Медицина, скоринг по документам/селфи: обязательный аудит «на что смотрит модель».</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-xai"><div class="q">Веса каналов Grad-CAM — это</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">GAP градиента логита по карте признаков</button>
+        <button type="button" class="opt" data-ok="0">случайный dropout mask</button>
+        <button type="button" class="opt" data-ok="0">только веса fc без градиентов</button>
+      </div>
+      <div class="feedback" data-explain-ok="α_k = среднее ∂y/∂A^k." data-explain-bad="Смотрите формулу Grad-CAM."></div>
+    </div>
+    <details class="spoiler"><summary>Своими словами</summary><p>Saliency — сырой градиент; Grad-CAM — «где» по каналам; IG — градиент вдоль пути от baseline, чтобы обойти насыщение.</p></details>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Saliency | Deconv/Guided BP | Grad-CAM | Guided Grad-CAM | IG. Смотреть несколько методов.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('xai')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-map" data-topic="map">
+  <h2>8. Виджет: карта важности на tiny CNN</h2>
+  <div class="topic-meta"><span class="badge extra">сверх курса</span> <span class="badge sem">идея семинара</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Почувствовать attribution без Captum: маленькая CNN в JS, считаем saliency и упрощённый Grad-CAM по единственной карте признаков.</p></div>
+  <div class="block"><h3><span class="n">2–6</span> Интерактив</h3>
+    <div class="widget">
+      <p class="widget-title">Tiny CNN: яркое пятно → класс 1</p>
+      <p class="widget-hint">Двигайте пятно; сравните Saliency vs Grad-CAM; обучите 40 шагов — карта должна стянуться к пятну.</p>
+      <div class="widget-controls">
+        <label>метод
+          <select id="hm-method">
+            <option value="sal">Saliency</option>
+            <option value="cam">Grad-CAM (упрощ.)</option>
+            <option value="ig">IG (8 шагов)</option>
+          </select>
+        </label>
+        <button class="btn btn-sm" type="button" id="hm-train">Обучить 80 шагов</button>
+        <button class="btn btn-sm" type="button" id="hm-reset">Сброс весов</button>
+      </div>
+      <div class="heat-wrap">
+        <div><div class="muted" style="font-size:12px;margin-bottom:4px">вход (клик = центр пятна)</div>
+          <canvas id="hmIn" width="160" height="160"></canvas></div>
+        <div><div class="muted" style="font-size:12px;margin-bottom:4px">карта важности</div>
+          <canvas id="hmMap" width="160" height="160"></canvas></div>
+      </div>
+      <div class="readout" id="hmOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код (NumPy-ячейка)</h3>
+    <div class="code-cell" id="pyCell1">
+      <div class="toolbar">
+        <button class="btn btn-sm btn-primary" type="button" onclick="runPyCell('pyCell1')">Запустить</button>
+        <button class="btn btn-sm" type="button" onclick="showPySol('pyCell1')">Показать решение</button>
+        <span class="muted" id="pyStatus">Pyodide: по кнопке</span>
+      </div>
+      <textarea id="pyCell1-src" spellcheck="false"># Saliency для f = sum( (K * patch)^2 ): ∂f/∂x
+import numpy as np
+x = np.zeros((5,5)); x[2,2] = 1.0
+K = np.array([[0,1,0],[1,-4,1],[0,1,0]], float)  # edge-ish
+# valid conv center
+patch = x[1:4,1:4]
+s = (K*patch).sum()
+f = s**2
+# d f / d patch = 2 s K
+gs = 2*s*K
+print('f', round(f,4))
+print('grad at center', round(float(gs[1,1]),4))
+</textarea>
+      <div class="out" id="pyCell1-out"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Интерпретировать случайные веса до обучения — карта бессмысленна.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="quiz" data-quiz="q-map"><div class="q">После обучения на «пятно = класс 1» карта должна</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">концентрироваться около пятна</button>
+        <button type="button" class="opt" data-ok="0">равномерно залить весь кадр</button>
+        <button type="button" class="opt" data-ok="0">обнулиться везде</button>
+      </div>
+      <div class="feedback" data-explain-ok="Логит зависит от пятна." data-explain-bad="Покрутите виджет Train."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">В браузере: tiny CNN + |∂logit/∂x| / CAM / IG. Обучение на глазах → карта стягивается к признаку.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('map')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-cv" data-topic="cv">
+  <h2>9. Задачи CV обзорно: детекция, сегментация, U-Net</h2>
+  <div class="topic-meta"><span class="badge lec">из лекции</span> <span class="badge extra">сверх курса</span></div>
+  <div class="block"><h3><span class="n">1</span> Зачем</h3>
+    <p>Классификация отвечает «что на картинке». Детекция — «где объекты (box)». Сегментация — «какие пиксели принадлежат объекту/классу».</p></div>
+  <div class="block"><h3><span class="n">2</span> Интуиция</h3>
+    <div class="card" style="padding:12px">
+      <svg viewBox="0 0 520 120" width="100%" style="max-width:520px">
+        <rect x="10" y="20" width="140" height="80" rx="8" fill="#f5f5f7" stroke="#d2d2d7"/>
+        <text x="80" y="55" text-anchor="middle" font-size="11">classify</text>
+        <text x="80" y="75" text-anchor="middle" font-size="10" fill="#6e6e73">1 label</text>
+        <rect x="180" y="20" width="140" height="80" rx="8" fill="#f0f7ff" stroke="#0071e3"/>
+        <rect x="205" y="40" width="50" height="35" fill="none" stroke="#ea580c" stroke-width="2"/>
+        <rect x="250" y="55" width="40" height="30" fill="none" stroke="#16a34a" stroke-width="2"/>
+        <text x="250" y="28" text-anchor="middle" font-size="10" fill="#0071e3">detect + IoU</text>
+        <rect x="350" y="20" width="150" height="80" rx="8" fill="#f7f2ff" stroke="#7c3aed"/>
+        <path d="M370,70 Q400,30 430,55 T490,60" fill="none" stroke="#7c3aed" stroke-width="8" opacity=".5"/>
+        <text x="425" y="100" text-anchor="middle" font-size="10" fill="#7c3aed">segment / U-Net</text>
+      </svg>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">3</span> Определение</h3>
+    <p><strong>IoU</strong> (Intersection over Union): $\mathrm{IoU}=|A\cap B|/|A\cup B|$ для предсказанного и истинного box/маски.</p>
+    <p><strong>Семантическая</strong> сегментация — класс на пиксель (все машины = один класс). <strong>Instance</strong> — отдельные объекты.</p>
+    <p><strong>U-Net:</strong> encoder ↓ сжимает, decoder ↑ восстанавливает; skip-связи копируют детали с того же масштаба (важно для мед. масок).</p>
+  </div>
+  <div class="block"><h3><span class="n">4</span> По шагам IoU</h3>
+    <div class="steps" data-steps="iou">
+      <div class="step show"><strong>1.</strong> Пересечение: max(0, x2−x1)·max(0,y2−y1).<div class="why">Площадь overlap.</div></div>
+      <div class="step"><strong>2.</strong> Объединение = area_a + area_b − intersection.<div class="why">Без двойного счёта overlap.</div></div>
+      <div class="step"><strong>3.</strong> IoU = inter / union ∈ [0,1]; порог 0.5 — классика детекции.<div class="why">mAP строится по IoU.</div></div>
+    </div>
+    <div class="steps-nav"><button class="btn btn-sm" type="button" onclick="nextStep('iou')">Следующий шаг</button>
+    <button class="btn btn-sm" type="button" onclick="resetSteps('iou')">Сброс</button></div>
+  </div>
+  <div class="block"><h3><span class="n">5–6</span> Интерактив IoU</h3>
+    <div class="widget">
+      <p class="widget-title">Два bounding box</p>
+      <p class="widget-hint">Двигайте слайдеры предсказанного box — смотрите IoU.</p>
+      <div class="widget-controls">
+        <label>pred x <input type="range" id="iou-x" min="0" max="160" value="50"></label>
+        <label>pred y <input type="range" id="iou-y" min="0" max="120" value="40"></label>
+        <label>pred w <input type="range" id="iou-w" min="20" max="120" value="70"></label>
+        <label>pred h <input type="range" id="iou-h" min="20" max="100" value="50"></label>
+      </div>
+      <canvas id="iouCanvas" width="280" height="200"></canvas>
+      <div class="readout" id="iouOut"></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">7</span> Код</h3>
+<pre><code>def iou_box(a, b):  # a,b = (x1,y1,x2,y2)
+    ix1, iy1 = max(a[0],b[0]), max(a[1],b[1])
+    ix2, iy2 = min(a[2],b[2]), min(a[3],b[3])
+    inter = max(0, ix2-ix1) * max(0, iy2-iy1)
+    uni = (a[2]-a[0])*(a[3]-a[1]) + (b[2]-b[0])*(b[3]-b[1]) - inter
+    return inter / (uni + 1e-8)
+# U-Net idea: out = decode(encode(x), skips=encode_features)
+</code></pre>
+  </div>
+  <div class="block"><h3><span class="n">8</span> Грабли</h3>
+    <ul class="pitfalls"><li>Путать semantic и instance; считать IoU по центрам без площади.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">9</span> Где в жизни</h3>
+    <ul class="life"><li>Детекция печатей на документах; U-Net — маски повреждений на фото залога.</li></ul>
+  </div>
+  <div class="block"><h3><span class="n">10</span> Проверка</h3>
+    <div class="fillblank">
+      <div class="prompt">Box A 0..2×0..2, B 1..3×1..3 → IoU = inter 1 / union 7 = ? (примерно 0.143)</div>
+      <div class="row"><input type="number" id="ans-iou" step="0.001"><button class="btn btn-sm" type="button" onclick="checkFill('iou',1/7)">Проверить</button>
+      <span id="fb-iou" style="display:none"></span></div>
+    </div>
+    <div class="quiz" data-quiz="q-cv"><div class="q">U-Net skip connections переносят</div>
+      <div class="opts">
+        <button type="button" class="opt" data-ok="1">пространственные детали с encoder на decoder</button>
+        <button type="button" class="opt" data-ok="0">только learning rate</button>
+        <button type="button" class="opt" data-ok="0">метки классов в loss</button>
+      </div>
+      <div class="feedback" data-explain-ok="Как в схеме лекции." data-explain-bad="Encoder→decoder skips."></div>
+    </div>
+  </div>
+  <div class="block"><h3><span class="n">11</span> Шпаргалка</h3>
+    <div class="cheat">Classify / detect (IoU) / segment. U-Net = encoder–decoder + skips.</div>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('cv')">Отметить</button></div>
+</section>
+
+<section class="topic" id="t-final" data-topic="final">
+  <h2>Итоговый мини-тест</h2>
+  <div class="quiz" data-quiz="f1"><div class="q">1. ImageNet Normalize mean[0] ≈</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">0.485</button><button type="button" class="opt" data-ok="0">0</button><button type="button" class="opt" data-ok="0">255</button></div>
+    <div class="feedback" data-explain-ok="Стандарт torchvision." data-explain-bad="μ ImageNet."></div></div>
+  <div class="quiz" data-quiz="f2"><div class="q">2. Наибольший скачок на малых данных обычно даёт</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">pretrained / full FT</button><button type="button" class="opt" data-ok="0">только больше слоёв с нуля</button><button type="button" class="opt" data-ok="0">убрать aug</button></div>
+    <div class="feedback" data-explain-ok="Лестница семинара." data-explain-bad="Лестница."></div></div>
+  <div class="quiz" data-quiz="f3"><div class="q">3. Linear(512,150) params</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">76950</button><button type="button" class="opt" data-ok="0">512</button><button type="button" class="opt" data-ok="0">150</button></div>
+    <div class="feedback" data-explain-ok="512·150+150." data-explain-bad="W+b."></div></div>
+  <div class="quiz" data-quiz="f4"><div class="q">4. Freeze + model.train() и BN</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">running stats могут обновляться</button><button type="button" class="opt" data-ok="0">BN удаляется</button><button type="button" class="opt" data-ok="0">градиенты всё равно текут</button></div>
+    <div class="feedback" data-explain-ok="Тонкость семинара." data-explain-bad="BN stats."></div></div>
+  <div class="quiz" data-quiz="f5"><div class="q">5. CosineAnnealing к T_max</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">lr → ≈0 (η_min)</button><button type="button" class="opt" data-ok="0">lr растёт</button><button type="button" class="opt" data-ok="0">lr = 1</button></div>
+    <div class="feedback" data-explain-ok="Формула cosine." data-explain-bad="Scheduler."></div></div>
+  <div class="quiz" data-quiz="f6"><div class="q">6. Patient leakage</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">один пациент в train и test</button><button type="button" class="opt" data-ok="0">мало эпох</button><button type="button" class="opt" data-ok="0">большой lr</button></div>
+    <div class="feedback" data-explain-ok="МРТ-тема." data-explain-bad="Утечка субъекта."></div></div>
+  <div class="quiz" data-quiz="f7"><div class="q">7. Grad-CAM α_k</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">среднее градиента по карте</button><button type="button" class="opt" data-ok="0">max pooling входа</button><button type="button" class="opt" data-ok="0">learning rate</button></div>
+    <div class="feedback" data-explain-ok="Формула." data-explain-bad="XAI."></div></div>
+  <div class="quiz" data-quiz="f8"><div class="q">8. IG решает проблему</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">насыщения градиента</button><button type="button" class="opt" data-ok="0">нехватки GPU</button><button type="button" class="opt" data-ok="0">отсутствия BN</button></div>
+    <div class="feedback" data-explain-ok="Путь от baseline." data-explain-bad="IG."></div></div>
+  <div class="quiz" data-quiz="f9"><div class="q">9. IoU двух box</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">|∩| / |∪|</button><button type="button" class="opt" data-ok="0">|∪| / |∩|</button><button type="button" class="opt" data-ok="0">только площадь pred</button></div>
+    <div class="feedback" data-explain-ok="Определение." data-explain-bad="IoU."></div></div>
+  <div class="quiz" data-quiz="f10"><div class="q">10. U-Net skips</div>
+    <div class="opts"><button type="button" class="opt" data-ok="1">детализация маски с encoder</button><button type="button" class="opt" data-ok="0">замена softmax</button><button type="button" class="opt" data-ok="0">только data aug</button></div>
+    <div class="feedback" data-explain-ok="Лекция." data-explain-bad="U-Net."></div></div>
+  <div class="final-score" id="finalScore">Ответьте на вопросы — счёт обновится.</div>
+  <h3 style="margin-top:28px">Шпаргалка модуля 4</h3>
+  <div class="cheat">
+    <p>Dataset / ImageFolder; Resize256→Crop224→Normalize ImageNet.</p>
+    <p>Лестница: simple→R18→aug→full FT→head. Dual lr; BN≠freeze.</p>
+    <p>Schedulers: Step, Cosine, warmup, OneCycle. МРТ: leakage, XAI.</p>
+    <p>Saliency / Guided BP / Grad-CAM / IG. IoU; U-Net skips.</p>
+  </div>
+  <div class="mark-done"><button class="btn btn-sm" type="button" onclick="markDone('final')">Отметить</button></div>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const STORAGE_KEY="dl-module4-progress-v1";
+const TOPICS=[
+  {id:"intro",label:"Введение",topic:null},
+  {id:"t-ds",label:"1. Dataset",topic:"ds"},
+  {id:"t-tf",label:"2. Transforms",topic:"tf"},
+  {id:"t-ladder",label:"3. Лестница",topic:"ladder"},
+  {id:"t-ft",label:"4. Fine-tuning",topic:"ft"},
+  {id:"t-sched",label:"5. Schedulers",topic:"sched"},
+  {id:"t-mri",label:"6. МРТ",topic:"mri"},
+  {id:"t-xai",label:"7. XAI",topic:"xai"},
+  {id:"t-map",label:"8. Карта важности",topic:"map"},
+  {id:"t-cv",label:"9. Задачи CV",topic:"cv"},
+  {id:"t-final",label:"Мини-тест",topic:"final"}
+];
+function loadProgress(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch(e){return{};}}
+function saveProgress(p){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(p));}catch(e){}}
+let progress=loadProgress(); if(!progress.done)progress.done={}; if(!progress.quiz)progress.quiz={};
+function buildToc(){ const toc=document.getElementById("toc"); toc.innerHTML="";
+  TOPICS.forEach(t=>{ const li=document.createElement("li"); const a=document.createElement("a");
+    a.href="#"+t.id; a.dataset.topic=t.topic||"";
+    a.innerHTML='<span class="dot"></span><span>'+t.label+"</span>";
+    if(t.topic&&progress.done[t.topic]) a.classList.add("done");
+    li.appendChild(a); toc.appendChild(li); }); updateProgressUI(); }
+function updateProgressUI(){ const keys=TOPICS.map(t=>t.topic).filter(Boolean); const n=keys.filter(k=>progress.done[k]).length;
+  document.getElementById("progressTotal").textContent=keys.length; document.getElementById("progressText").textContent=n;
+  document.getElementById("progressFill").style.width=(100*n/keys.length)+"%";
+  document.querySelectorAll("#toc a").forEach(a=>{ if(a.dataset.topic&&progress.done[a.dataset.topic]) a.classList.add("done"); }); }
+window.markDone=function(topic){ progress.done[topic]=true; saveProgress(progress); updateProgressUI(); };
+window.toggleNav=function(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("overlay").classList.toggle("show"); };
+window.closeNav=function(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); };
+window.nextStep=function(id){ const root=document.querySelector('[data-steps="'+id+'"]'); if(!root)return;
+  const steps=[...root.querySelectorAll(".step")]; const shown=steps.filter(s=>s.classList.contains("show")).length;
+  if(shown<steps.length) steps[shown].classList.add("show");
+  if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([root]); };
+window.resetSteps=function(id){ const root=document.querySelector('[data-steps="'+id+'"]'); if(!root)return;
+  [...root.querySelectorAll(".step")].forEach((s,i)=>{ if(i===0)s.classList.add("show"); else s.classList.remove("show"); }); };
+window.checkFill=function(key, expected){ const inp=document.getElementById("ans-"+key), fb=document.getElementById("fb-"+key);
+  const v=parseFloat(inp.value); fb.style.display="block";
+  if(Number.isFinite(v)&&Math.abs(v-expected)<1e-3){ fb.style.color="var(--ok)"; fb.textContent="Верно."; }
+  else { fb.style.color="var(--loss)"; fb.textContent="Ожидается "+expected+"."; } };
+window.copyPre=function(btn){ const pre=btn.parentElement.querySelector("pre"); if(!pre)return;
+  navigator.clipboard.writeText(pre.innerText).then(()=>{ btn.textContent="Скопировано"; setTimeout(()=>btn.textContent="Скопировать",1200); }).catch(()=>{}); };
+
+function wireQuizzes(){ document.querySelectorAll(".quiz").forEach(q=>{ const id=q.dataset.quiz;
+  q.querySelectorAll(".opt").forEach(btn=>{ btn.addEventListener("click",()=>{ if(q.dataset.locked)return; q.dataset.locked="1";
+    const ok=btn.dataset.ok==="1"; btn.classList.add(ok?"correct":"wrong");
+    q.querySelectorAll(".opt").forEach(b=>{ if(b.dataset.ok==="1") b.classList.add("correct"); });
+    const fb=q.querySelector(".feedback"); if(fb){ fb.classList.add("show"); fb.style.color=ok?"var(--ok)":"var(--loss)";
+      fb.textContent=ok?(fb.dataset.explainOk||"Верно."):(fb.dataset.explainBad||"Неверно."); }
+    progress.quiz[id]=ok?1:0; saveProgress(progress); updateFinalScore(); }); }); }); }
+function updateFinalScore(){ const ids=["f1","f2","f3","f4","f5","f6","f7","f8","f9","f10"];
+  const answered=ids.filter(i=>progress.quiz[i]!==undefined).length; const correct=ids.filter(i=>progress.quiz[i]===1).length;
+  const el=document.getElementById("finalScore"); if(!el)return;
+  el.textContent=!answered?"Ответьте на вопросы — счёт обновится.":"Результат: "+correct+" / "+ids.length+" (отвечено "+answered+")"; }
+
+function bindLive(){
+  const ds=()=>{ const C=+document.getElementById("ds-c").value,n=+document.getElementById("ds-n").value,t=+document.getElementById("ds-t").value;
+    const te=Math.max(1,Math.round(n*t)), tr=n-te;
+    document.getElementById("dsOut").textContent="на класс: train "+tr+", test "+te+"  |  всего train "+(tr*C)+", test "+(te*C);
+  };
+  ["ds-c","ds-n","ds-t"].forEach(id=>document.getElementById(id).addEventListener("input",ds)); ds();
+
+  const tfN=()=>{ const mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225];
+    const rgb=[+document.getElementById("tf-r").value,+document.getElementById("tf-g").value,+document.getElementById("tf-b").value];
+    const z=rgb.map((v,i)=>((v-mean[i])/std[i]).toFixed(3));
+    document.getElementById("tfTrace").textContent="z = ["+z.join(", ")+"]"; };
+  ["tf-r","tf-g","tf-b"].forEach(id=>document.getElementById(id).addEventListener("input",tfN)); tfN();
+
+  const tfP=()=>{ const aug=document.getElementById("tf-aug").checked, rot=document.getElementById("tf-rot").checked;
+    const train=["Resize/RandomResizedCrop(224)","ToTensor","Normalize ImageNet"];
+    if(aug) train.unshift("RandomHorizontalFlip"+ (rot?", RandomRotation(10)":""));
+    else if(rot) train.unshift("RandomRotation(10)");
+    document.getElementById("tfOut").textContent="train: "+train.join(" → ")+"\ntest: Resize(256) → CenterCrop(224) → ToTensor → Normalize";
+  };
+  ["tf-aug","tf-rot"].forEach(id=>document.getElementById(id).addEventListener("input",tfP)); tfP();
+
+  const st=()=>{ const d=document.getElementById("st-data").value, dom=document.getElementById("st-dom").value;
+    let rec="", why="";
+    if(d==="tiny"){ rec="эмбеддинги pretrained + линейный классификатор (или только голова)"; why="слишком мало параметров можно учить без переобучения"; }
+    else if(d==="small"&&dom==="close"){ rec="full fine-tuning ResNet18 + аугментации"; why="как лестница семинара: pretrained даёт главный скачок"; }
+    else if(d==="small"&&dom==="far"){ rec="FT последних блоков (layer4+fc) + сильные доменные aug; проверить XAI"; why="низкие фильтры полезны, верх надо адаптировать; риск читерства"; }
+    else if(d==="small"&&dom==="mid"){ rec="full FT с меньшим lr тела / dual lr"; why="компромисс домена"; }
+    else if(d==="med"){ rec=dom==="far"?"FT всей сети или train from scratch с сильными aug":"full FT или scratch+aug — сравнить лестницей"; why="данных хватает на адаптацию"; }
+    else { rec="можно учить сильную модель с нуля; pretrained всё ещё хороший старт"; why="много данных"; }
+    document.getElementById("stOut").textContent="Рекомендация: "+rec+"\nПочему: "+why;
+  };
+  ["st-data","st-dom"].forEach(id=>document.getElementById(id).addEventListener("change",st)); st();
+
+  const ft=()=>{ const C=+document.getElementById("ft-c").value, inn=+document.getElementById("ft-in").value;
+    document.getElementById("ftTrace").textContent="fc params = "+inn+"·"+C+" + "+C+" = "+(inn*C+C); };
+  ["ft-c","ft-in"].forEach(id=>document.getElementById(id).addEventListener("input",ft)); ft();
+
+  const ftM=()=>{ const m=document.getElementById("ft-mode").value;
+    const map={
+      full:"optimizer = SGD(model.parameters(), lr=0.01)\nвсе ~11M params trainable; BN в train обновляет stats",
+      head:"requires_grad=False на body; opt=SGD(model.fc.parameters(), lr=0.01)\ntrainable ≈ 512·C+C; для жёсткого freeze: body.eval()",
+      l4:"unfreeze layer4 + fc (как на МРТ)\nадаптация верхних карт под домен, низ заморожен",
+      dual:"Adam([ {params: body, lr:1e-4}, {params: fc, lr:1e-3} ])\nголова учится быстрее, тело — аккуратно"
+    };
+    document.getElementById("ftOut").textContent=map[m]; };
+  document.getElementById("ft-mode").addEventListener("change",ftM); ftM();
+
+  const ig=()=>{ const x=+document.getElementById("ig-x").value, x0=+document.getElementById("ig-x0").value;
+    // f=x^2, df=2x; IG = (x-x0)*∫ 2(x0+a(x-x0)) da = (x-x0)*[2x0 a + (x-x0)a^2]_0^1 = (x-x0)*(2x0+(x-x0))=x^2-x0^2
+    const igv=x*x-x0*x0;
+    document.getElementById("igTrace").textContent="IG = f(x)-f(x0) = "+igv.toFixed(4)+"  (для f=x²)"; };
+  ["ig-x","ig-x0"].forEach(id=>document.getElementById(id).addEventListener("input",ig)); ig();
+
+  const mri=()=>{ const s=document.getElementById("mri-sc").value;
+    const map={
+      acc:"Риск: модель читерит по артефакту. Accuracy высокая, клиника опасна. Смотрите Grad-CAM/IG.",
+      pat:"Утечка пациента: метрика завышена, на новых людях упадёт. Split по patient_id.",
+      ok:"Лучший из сценариев: локализация + правильный split. Всё равно нужен врач.",
+      imb:"Accuracy врёт при дисбалансе. Смотрите recall/F1 по классам и confusion matrix."
+    };
+    document.getElementById("mriOut").textContent=map[s]; };
+  document.getElementById("mri-sc").addEventListener("change",mri); mri();
+}
+
+function drawLR(){
+  const canvas=document.getElementById("lrCanvas"); if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const E=+document.getElementById("lr-ep").value||15;
+  const W=+document.getElementById("lr-wu").value||0;
+  const base=+document.getElementById("lr-base").value||0.01;
+  const xs=[];
+  const cosine=[], step=[], warm=[], one=[];
+  for(let t=0;t<E;t++){
+    xs.push(t);
+    cosine.push(base*0.5*(1+Math.cos(Math.PI*t/Math.max(E-1,1))));
+    step.push(base*Math.pow(0.3, Math.floor(t/5)));
+    if(t<W) warm.push(base*(t+1)/Math.max(W,1));
+    else { const u=(t-W)/Math.max(E-1-W,1); warm.push(base*0.5*(1+Math.cos(Math.PI*u))); }
+    // OneCycle approx: rise to base in 30%, fall to base/20
+    const mid=0.3*E; let v;
+    if(t<mid) v=base*0.1 + (base-base*0.1)*(t/Math.max(mid,1));
+    else v=base*(1-(t-mid)/Math.max(E-1-mid,1))*(1-0.05)+base*0.05;
+    one.push(v);
+  }
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const pad=36, Wd=canvas.width-pad*1.2, Ht=canvas.height-pad*1.5;
+  const ymax=base*1.05;
+  function X(i){return pad+i/(E-1||1)*Wd;}
+  function Y(v){return pad*0.6+(1-v/ymax)*Ht;}
+  ctx.strokeStyle="#e8e8ed"; ctx.beginPath(); ctx.moveTo(pad,pad*0.6); ctx.lineTo(pad,pad*0.6+Ht); ctx.lineTo(pad+Wd,pad*0.6+Ht); ctx.stroke();
+  function plot(arr,color){ ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+    arr.forEach((v,i)=>{ const x=X(i),y=Y(v); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+    arr.forEach((v,i)=>{ ctx.fillStyle=color; ctx.beginPath(); ctx.arc(X(i),Y(v),2.5,0,6.28); ctx.fill(); }); }
+  plot(cosine,"#0071e3"); plot(step,"#ea580c"); plot(warm,"#7c3aed"); plot(one,"#16a34a");
+  document.getElementById("lrOut").textContent="epoch 0: cosine="+cosine[0].toFixed(4)+", step="+step[0].toFixed(4)+
+    " | last: cosine="+cosine[E-1].toFixed(4)+", step="+step[E-1].toFixed(4);
+}
+["lr-ep","lr-wu","lr-base"].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener("input",drawLR); });
+
+/* ---- Tiny CNN + attribution ---- */
+function widgetHeat(){
+  const N=16;
+  let blob={x:10,y:8};
+  // one conv 3x3 + bias + GAP + linear 2
+  let K=new Float32Array(9), b=0, w=new Float32Array(2), c=new Float32Array(2);
+  function randn(){ return (Math.random()+Math.random()+Math.random()-1.5)*0.5; }
+  function init(){
+    // mild center-ish kernel + small head — trainable from near-chance
+    K.set([0.05,0.1,0.05, 0.1,0.2,0.1, 0.05,0.1,0.05]); b=0;
+    w[0]=0.1; w[1]=-0.05; c[0]=0; c[1]=0;
+  }
+  init();
+  function makeImg(){
+    const img=new Float32Array(N*N);
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const d=Math.hypot(x-blob.x,y-blob.y); img[y*N+x]=Math.exp(-d*d/8)+0.05;
+    }
+    return img;
+  }
+  function forward(img, wantFeat){
+    const F=N-2; const feat=new Float32Array(F*F);
+    for(let y=0;y<F;y++) for(let x=0;x<F;x++){
+      let s=b; for(let u=0;u<3;u++) for(let v=0;v<3;v++) s+=K[u*3+v]*img[(y+u)*N+(x+v)];
+      feat[y*F+x]=Math.max(0,s); // ReLU
+    }
+    let gap=0; for(let i=0;i<feat.length;i++) gap+=feat[i]; gap/=feat.length;
+    const logits=[w[0]*gap+c[0], w[1]*gap+c[1]];
+    if(wantFeat) return {feat,gap,logits,F};
+    return {gap,logits};
+  }
+  function train(steps){
+    const lr=0.25;
+    for(let t=0;t<steps;t++){
+      // jitter blob for positives; flat / corner noise for negatives
+      for(let pass=0;pass<2;pass++){
+        let img, target;
+        if(pass===0){
+          const ox=blob.x, oy=blob.y;
+          blob.x=Math.max(2,Math.min(N-3, blob.x+((Math.random()*3)|0)-1));
+          blob.y=Math.max(2,Math.min(N-3, blob.y+((Math.random()*3)|0)-1));
+          img=makeImg(); blob.x=ox; blob.y=oy; target=1;
+        } else {
+          img=new Float32Array(N*N);
+          for(let i=0;i<img.length;i++) img[i]=0.05+0.02*Math.random();
+          target=0;
+        }
+        const F=N-2;
+        const feat=new Float32Array(F*F);
+        const preA=new Float32Array(F*F);
+        for(let y=0;y<F;y++) for(let x=0;x<F;x++){
+          let s=b; for(let u=0;u<3;u++) for(let v=0;v<3;v++) s+=K[u*3+v]*img[(y+u)*N+(x+v)];
+          preA[y*F+x]=s; feat[y*F+x]=Math.max(0,s);
+        }
+        let gap=0; for(let i=0;i<feat.length;i++) gap+=feat[i]; gap/=feat.length;
+        const logits=[w[0]*gap+c[0], w[1]*gap+c[1]];
+        const m=Math.max(logits[0],logits[1]);
+        const e0=Math.exp(logits[0]-m), e1=Math.exp(logits[1]-m), Z=e0+e1;
+        const p0=e0/Z, p1=e1/Z;
+        const g0=p0-(target===0?1:0), g1=p1-(target===1?1:0);
+        const dgap=w[0]*g0+w[1]*g1;
+        w[0]-=lr*g0*gap; w[1]-=lr*g1*gap; c[0]-=lr*g0; c[1]-=lr*g1;
+        const dfeat=dgap/(F*F);
+        const dK=new Float32Array(9); let db=0;
+        for(let y=0;y<F;y++) for(let x=0;x<F;x++){
+          if(preA[y*F+x]<=0) continue;
+          db+=dfeat;
+          for(let u=0;u<3;u++) for(let v=0;v<3;v++) dK[u*3+v]+=dfeat*img[(y+u)*N+(x+v)];
+        }
+        for(let i=0;i<9;i++) K[i]-=lr*dK[i]; b-=lr*db;
+      }
+    }
+  }
+  function saliency(img){
+    // numerical grad of logit1
+    const eps=1e-3; const g=new Float32Array(N*N);
+    const base=forward(img).logits[1];
+    for(let i=0;i<img.length;i++){
+      const old=img[i]; img[i]=old+eps; const v=forward(img).logits[1]; img[i]=old;
+      g[i]=Math.abs((v-base)/eps);
+    }
+    return g;
+  }
+  function gradcam(img){
+    const {feat,F}=forward(img,true);
+    // alpha = d logit1 / d feat ≈ w[1]/ (F*F)  (through GAP), then ReLU already in feat
+    const alpha=w[1]/(F*F);
+    const cam=new Float32Array(F*F);
+    for(let i=0;i<cam.length;i++) cam[i]=Math.max(0, alpha*feat[i]);
+    // upsample nearest to N
+    const up=new Float32Array(N*N);
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const fy=Math.min(F-1, Math.max(0, y-1));
+      const fx=Math.min(F-1, Math.max(0, x-1));
+      up[y*N+x]=cam[fy*F+fx];
+    }
+    return up;
+  }
+  function igMap(img){
+    const steps=8; const g=new Float32Array(N*N);
+    const baseImg=new Float32Array(N*N); // zeros baseline +0.05 flat? use 0
+    for(let s=1;s<=steps;s++){
+      const a=s/steps; const x=new Float32Array(N*N);
+      for(let i=0;i<N*N;i++) x[i]=baseImg[i]+a*(img[i]-baseImg[i]);
+      const sal=saliency(x); // |dlogit/dx| at interpolated — approx IG path
+      for(let i=0;i<N*N;i++) g[i]+=sal[i];
+    }
+    for(let i=0;i<N*N;i++) g[i]=(img[i]-baseImg[i])*(g[i]/steps);
+    for(let i=0;i<N*N;i++) g[i]=Math.abs(g[i]);
+    return g;
+  }
+  function norm(a){ let mn=Infinity,mx=-Infinity; for(let i=0;i<a.length;i++){ if(a[i]<mn)mn=a[i]; if(a[i]>mx)mx=a[i]; }
+    const o=new Float32Array(a.length); const d=mx-mn||1; for(let i=0;i<a.length;i++) o[i]=(a[i]-mn)/d; return o; }
+  function drawArr(canvas, arr, cmap){
+    const ctx=canvas.getContext("2d"); const sc=canvas.width/N;
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const v=arr[y*N+x];
+      if(cmap){ // jet-ish
+        const r=Math.min(1,Math.max(0,1.5-Math.abs(v-0.75)*2));
+        const g=Math.min(1,Math.max(0,1.5-Math.abs(v-0.5)*2));
+        const b=Math.min(1,Math.max(0,1.5-Math.abs(v-0.25)*2));
+        ctx.fillStyle="rgb("+((r*255)|0)+","+((g*255)|0)+","+((b*255)|0)+")";
+      } else { const u=(v*255)|0; ctx.fillStyle="rgb("+u+","+u+","+u+")"; }
+      ctx.fillRect(x*sc,y*sc,sc+0.5,sc+0.5);
+    }
+  }
+  function render(){
+    const img=makeImg();
+    const method=document.getElementById("hm-method").value;
+    let heat=method==="sal"?saliency(img):method==="cam"?gradcam(img):igMap(img);
+    heat=norm(heat);
+    drawArr(document.getElementById("hmIn"), img, false);
+    drawArr(document.getElementById("hmMap"), heat, true);
+    const {logits}=forward(img);
+    const m=Math.max(logits[0],logits[1]); const e0=Math.exp(logits[0]-m), e1=Math.exp(logits[1]-m);
+    const p1=e1/(e0+e1);
+    document.getElementById("hmOut").textContent="blob@("+blob.x+","+blob.y+")  P(class1)="+p1.toFixed(3)+
+      "  logits=["+logits[0].toFixed(2)+", "+logits[1].toFixed(2)+"]  method="+method;
+  }
+  document.getElementById("hmIn").addEventListener("pointerdown", e=>{
+    const r=e.target.getBoundingClientRect();
+    blob.x=Math.max(1,Math.min(N-2, ((e.clientX-r.left)/r.width*N)|0));
+    blob.y=Math.max(1,Math.min(N-2, ((e.clientY-r.top)/r.height*N)|0));
+    render();
+  });
+  document.getElementById("hm-method").onchange=render;
+  document.getElementById("hm-train").onclick=()=>{ train(80); render(); };
+  document.getElementById("hm-reset").onclick=()=>{ init(); render(); };
+  render();
+}
+
+function widgetIoU(){
+  const gt={x:60,y:50,w:80,h:60};
+  function iou(a,b){
+    const ax2=a.x+a.w, ay2=a.y+a.h, bx2=b.x+b.w, by2=b.y+b.h;
+    const ix1=Math.max(a.x,b.x), iy1=Math.max(a.y,b.y), ix2=Math.min(ax2,bx2), iy2=Math.min(ay2,by2);
+    const inter=Math.max(0,ix2-ix1)*Math.max(0,iy2-iy1);
+    const uni=a.w*a.h+b.w*b.h-inter;
+    return inter/(uni+1e-8);
+  }
+  function draw(){
+    const pred={x:+document.getElementById("iou-x").value,y:+document.getElementById("iou-y").value,
+      w:+document.getElementById("iou-w").value,h:+document.getElementById("iou-h").value};
+    const c=document.getElementById("iouCanvas"); const ctx=c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle="#fafafa"; ctx.fillRect(0,0,c.width,c.height);
+    ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.strokeRect(gt.x,gt.y,gt.w,gt.h);
+    ctx.fillStyle="rgba(22,163,74,0.12)"; ctx.fillRect(gt.x,gt.y,gt.w,gt.h);
+    ctx.strokeStyle="#ea580c"; ctx.strokeRect(pred.x,pred.y,pred.w,pred.h);
+    ctx.fillStyle="rgba(234,88,12,0.12)"; ctx.fillRect(pred.x,pred.y,pred.w,pred.h);
+    const v=iou(gt,pred);
+    document.getElementById("iouOut").textContent="IoU = "+v.toFixed(3)+"  (gt зелёный, pred оранжевый)";
+  }
+  ["iou-x","iou-y","iou-w","iou-h"].forEach(id=>document.getElementById(id).addEventListener("input",draw));
+  draw();
+}
+
+/* Pyodide */
+let pyodideReady=null, pyodideFailed=false;
+const pySol={pyCell1:`import numpy as np
+x = np.zeros((5,5)); x[2,2] = 1.0
+K = np.array([[0,1,0],[1,-4,1],[0,1,0]], float)
+patch = x[1:4,1:4]
+s = (K*patch).sum()
+f = s**2
+gs = 2*s*K
+print('f', round(f,4))
+print('grad at center', round(float(gs[1,1]),4))`};
+async function ensurePyodide(){
+  if(pyodideFailed) throw new Error("Pyodide недоступен");
+  if(pyodideReady) return pyodideReady;
+  const st=document.getElementById("pyStatus"); if(st) st.textContent="Pyodide: загрузка…";
+  pyodideReady=(async()=>{
+    if(!window.loadPyodide){ await new Promise((res,rej)=>{ const s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"; s.onload=res; s.onerror=()=>rej(new Error("script")); document.head.appendChild(s); }); }
+    const py=await Promise.race([loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),45000))]);
+    await py.loadPackage("numpy"); if(st) st.textContent="Pyodide: готов"; return py;
+  })();
+  try{ return await pyodideReady; }catch(e){ pyodideFailed=true; pyodideReady=null; if(st)st.textContent="Pyodide: ошибка"; throw e; }
+}
+window.runPyCell=async function(id){ const src=document.getElementById(id+"-src").value; const out=document.getElementById(id+"-out");
+  out.className="out"; out.textContent="Выполняется…";
+  try{ const py=await ensurePyodide(); let printed="";
+    py.setStdout({batched:s=>{printed+=s+"\n";}}); py.setStderr({batched:s=>{printed+=s+"\n";}});
+    await py.runPythonAsync(src); out.textContent=printed.trim()||"(нет вывода)";
+    if(printed.includes("grad at center")) out.classList.add("ok");
+  }catch(e){ out.classList.add("err"); out.textContent="Ошибка: "+e.message; } };
+window.showPySol=function(id){ document.getElementById(id+"-src").value=pySol[id]; };
+
+function spy(){ const links=[...document.querySelectorAll("#toc a")]; let cur=links[0];
+  links.forEach(a=>{ const el=document.querySelector(a.getAttribute("href")); if(el&&el.getBoundingClientRect().top<120) cur=a; });
+  links.forEach(a=>a.classList.toggle("active",a===cur)); }
+document.addEventListener("DOMContentLoaded",()=>{
+  buildToc(); wireQuizzes(); bindLive(); drawLR(); widgetHeat(); widgetIoU(); updateFinalScore();
+  document.addEventListener("scroll",spy,{passive:true}); spy();
+  document.querySelectorAll("#toc a").forEach(a=>a.addEventListener("click",()=>closeNav()));
+});
+})();
+</script>
+</body>
+</html>
