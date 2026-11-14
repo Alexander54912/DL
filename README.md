@@ -1,3 +1,3 @@
 # DL interactive course
 
-Modules 0–4 in [`dl-course/`](dl-course/).
+Six modules (0–5) in [`dl-course/`](dl-course/). Start with `module0-math.html`.
