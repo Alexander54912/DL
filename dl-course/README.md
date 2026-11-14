@@ -2,15 +2,11 @@
 
 Self-contained HTML modules for catching up on a master’s DL course.
 
-## Module 0 — Математика для DL
+## Modules
 
-Open [`module0-math.html`](./module0-math.html) in a browser (or serve the folder).
+| File | Module |
+|------|--------|
+| [`module0-math.html`](./module0-math.html) | 0 · Математика для DL |
+| [`module1-tensors-autograd.html`](./module1-tensors-autograd.html) | 1 · Тензоры, autograd, backprop, оптимизаторы |
 
-- MathJax 3 (`tex-svg`) for formulas
-- Interactive canvas widgets (vectors, matrices, gradient, GD, softmax, SVD)
-- NumPy practice via Pyodide (lazy-loaded) with JS fill-in fallbacks
-- Progress stored in `localStorage`
-
-Estimated study time: **2.5–3.5 hours**.
-
-Modules 1–5 will be added in the same folder.
+Open a file in a browser or serve the folder. MathJax + canvas widgets; NumPy cells via Pyodide (lazy). Progress in `localStorage`.
